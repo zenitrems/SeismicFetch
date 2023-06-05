@@ -1,9 +1,11 @@
-
+import os
 import logging
+from dotenv import load_dotenv
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes
 from telegram.error import TelegramError
-
+import asyncio
+load_dotenv()
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     level=logging.INFO
@@ -25,9 +27,10 @@ class MyBot:
         context.bot.send_message(
             chat_id=update.effective_chat.id, text=message_text)
 
-    def send_evento(self, evento):
+    async def send_evento(self, evento):
         try:
-            self.bot.send_message(chat_id='1505812784', text=evento)
+            mensaje= f"Nuevo evento detectado:\n\n{evento}"
+            await self.bot.send_message(chat_id='1505812784', text=mensaje)
         except TelegramError as e:
             print(f'Error al enviar el mensaje: {e}')
 
@@ -43,6 +46,7 @@ class MyBot:
 
 # Ejemplo de uso
 if __name__ == '__main__':
-    token = "6285530746:AAGLVY2zWIK6PtuJlqGEOabdtztJ79QkY18"
+    token = os.getenv('TELEGRAM_KEY')
     bot = MyBot(token)
-    bot.run()
+    evento = "Se ha encontrado un evento"
+    asyncio.run(bot.send_evento(evento))
