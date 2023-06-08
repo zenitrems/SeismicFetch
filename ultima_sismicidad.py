@@ -99,7 +99,10 @@ async def buscar_existentes(datos_nuevos):
     """busca datos existentes"""
     try:
         datos_existentes = []
-        data_collection = list(collection_name.find())
+        oneday = datetime.now() - timedelta(days=5)
+        oneday_str = oneday.strftime("%Y-%m-%d")
+        data_collection = list(collection_name.find(
+            {"fecha": {"$gte": oneday_str}}))
         datos_existentes = data_collection
 
         fecha_hora_mas_reciente = None
@@ -152,11 +155,12 @@ async def guardar_nuevos(nuevos_datos):
         for evento in nuevos_datos:
             collection_name.insert_one(evento)
             print(colored(f"Nuevo evento detectado\n {evento}", "red"),)
-            try:
-                await bot.send_evento(evento)
-            except TelegramError as bot_error:
-                print(colored("Error TelegramBot:\n",
-                              "red", attrs=["blink", "reverse"]), str(bot_error))
+            if evento['magnitud'] >= 4.0:
+                try:
+                    await bot.send_evento(evento)
+                except TelegramError as bot_error:
+                    print(colored("Error TelegramBot:\n",
+                                "red", attrs=["blink", "reverse"]), str(bot_error))
 
     except PyMongoError as mongo_error:
         print(colored("mongo error: \n", "red",
