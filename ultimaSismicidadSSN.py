@@ -29,13 +29,25 @@ async def consultar_ssn():
             finish = time.perf_counter()
 
             print(colored(f"\nssn.unam.mx consultado en {finish - start:0.4f} segundos",
-                          "yellow", attrs=["bold"]))
+                          "yellow"))
 
             soup = BeautifulSoup(response.text, 'html.parser')
+            footer = soup.find('footer')
+            ssn_ultimo = footer.find("p", "update-time")
+
+            ssn_ultimo_start_index = ssn_ultimo.text.find(
+                "a las ") + len("a las ")
+            ssn_ultimo_finish_index = ssn_ultimo.text.find(" (")
+            ssn_ultimo_extract_date = ssn_ultimo.text[ssn_ultimo_start_index:ssn_ultimo_finish_index]
+            ssn_ultima_actualizacion = ssn_ultimo_extract_date.replace(
+                "  ", " ")
+            print(colored(
+                f"\nÚltima actualización SSN {ssn_ultima_actualizacion} Hora Centro", "yellow"))
+
             table = soup.find('table')
-            raw_data = []
             rows = table.find_all('tr')
 
+            raw_data = []
             for row in rows[1:]:
                 cells = row.find_all('td')
                 epi_span_tags = cells[2].find_all('span')
@@ -52,14 +64,14 @@ async def consultar_ssn():
                     magnitud = magnitud_text
                     is_preliminar = False
                 row_data = {
+                    'preliminar': is_preliminar,
                     'fecha': datetime_span_texts[0].strip(),
                     'hora': datetime_span_texts[1].strip(),
                     'magnitud': float(magnitud),
                     'latitud': float(epi_span_texts[1]),
                     'longitud': float(epi_span_texts[2]),
                     'profundidad': float(profundidad_split),
-                    'referencia': epi_span_texts[0].strip(),
-                    'preliminar': is_preliminar
+                    'referencia': epi_span_texts[0].strip()
                 }
                 raw_data.append(row_data)
             json_data = json.dumps(raw_data, indent=4)
@@ -71,11 +83,11 @@ async def consultar_ssn():
         print(colored("Error en consultar_ssn:\n",
                       "red", attrs=["reverse"]), str(e))
         try:
-            await bot.send_evento("Error en consultar_ssn script terminado")
+            await bot.send_error("Error en consultar_ssn. Proceso Terminado")
         except TelegramError as botError:
             print(colored(f"Error TelegramBot:\n",
                           "red", attrs=["blink", "reverse"]), str(botError))
-        sys.exit(1)
+        sys.exit()
 
 
 async def guardar_nuevos(json_data):
@@ -89,11 +101,11 @@ async def guardar_nuevos(json_data):
         print(colored("mongo error: \n",
                       "red", attrs=["reverse"]), str(mongoError))
         try:
-            await bot.send_evento("Error en mongo script terminado")
+            await bot.send_error("Error en mongo script terminado")
         except TelegramError as botError:
             print(colored(f"Error TelegramBot:\n",
                           "red", attrs=["blink", "reverse"]), str(botError))
-        sys.exit(1)
+        sys.exit()
 
     fecha_hora_mas_reciente = None
 
@@ -126,7 +138,7 @@ async def guardar_nuevos(json_data):
             print(colored("\nNuevo evento detectado:", "red"),
                   json.dumps(evento, indent=4))
             try:
-                await bot.send_evento(evento)
+                await bot.send_evento(json.dumps(evento, indent=4))
             except TelegramError as botError:
                 print(colored(f"Error TelegramBot:\n",
                               "red", attrs=["blink", "reverse"]), str(botError))
@@ -136,11 +148,14 @@ async def guardar_nuevos(json_data):
                 print(colored("mongo error: \n",
                       "red", attrs=["reverse"]), str(mongoError))
                 try:
-                    await bot.send_evento("Error en mongo script terminado")
+                    await bot.send_error("Error en mongo script terminado")
                 except TelegramError as botError:
                     print(colored(f"Error TelegramBot:\n",
                           "red", attrs=["blink", "reverse"]), str(botError))
-                sys.exit(1)
+                sys.exit()
+    else:
+        print(colored("\nSin nuevos eventos",
+                      "yellow"))
 
 
 async def main():
@@ -148,7 +163,7 @@ async def main():
         print(colored("\nActualizando...", "yellow"))
         await consultar_ssn()
         print(colored("\nCompleto, Esperando...\n", 'green'))
-        await asyncio.sleep(150)
+        await asyncio.sleep(300)
 
 if __name__ == '__main__':
     asyncio.run(main())
