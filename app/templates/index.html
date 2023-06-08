@@ -102,7 +102,6 @@
       aria-labelledby="offcanvasMenuLabel"
     >
       <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasMenuLabel">Menú</h5>
         <div class="container-fluid p-1">
           <input
             type="text"
@@ -111,7 +110,6 @@
             data-date-end-date="0d"
           />
         </div>
-
         <button
           type="button"
           class="btn-close"
@@ -121,28 +119,6 @@
       </div>
       <div class="offcanvas-body">
         <div id="tableWrapper"></div>
-        {% if eventos %}
-        <!-- DATA CONTAINER -->
-        <div class="list-group data-container">
-          {% for evento in eventos%}
-          <a href="%" class="list-group-item list-group-item-action">
-            <div class="container-fluid" style="font-size: 11px">
-              <div class="row p-1">
-                <div class="col">
-                  <strong>Magnitud: </strong> {{evento.magnitud}}
-                </div>
-                <div class="col">
-                  <strong> Fecha: </strong> {{evento.fecha}}
-                </div>
-                <div class="col"><strong>Hora: </strong>{{evento.hora}}</div>
-              </div>
-            </div>
-          </a>
-          {% endfor%}
-        </div>
-        {%else%}
-        <p>Sin eventos</p>
-        {%endif%}
       </div>
     </div>
 
@@ -158,20 +134,92 @@
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha3/dist/js/bootstrap.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/bootstrap-datepicker/1.10.0/js/bootstrap-datepicker.min.js"></script>
     <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
-    <script>
-     
-      new gridjs.Grid({
-        columns: ["Magnitud", "Fecha", "Hora Centro"],
-        data: [],
-      }).render(document.getElementById("tableWrapper"));
+    <script type="text/javascript">
+      function getMagColor(cell) {
+        if (cell == 0) {
+          return "#fff";
+        } else if (cell < 3.0) {
+          return "#62ab5d";
+        } else if (cell < 4.0) {
+          return "#ffc304";
+        } else if (cell < 5.0) {
+          return "#f79b3f";
+        } else if (cell < 6.0) {
+          return "#ea5354";
+        } else if (cell < 7.0) {
+          return "#a85164";
+        } else if (cell < 8.0) {
+          return "#ff3fff";
+        } else {
+          return "#9f3f9f";
+        }
+      }
+
+      const eventos = "{{eventos|safe}}";
+      const tableData = [];
+
+      ("{%for evento in eventos%}");
+      var row = [
+        "{{evento.fecha}}" + ", " + "{{evento.hora}}",
+        "{{evento.magnitud}}",
+        "{{evento.latitud}}",
+        "{{evento.longitud}}",
+      ];
+      tableData.push(row);
+      ("{%endfor%}");
+
+      const grid = new gridjs.Grid({
+        columns: [
+          {
+            name: "Fecha y hora (Centro)",
+            width: "50%",
+          },
+          {
+            name: "Magnitud",
+            formatter: (cell) => {
+              const color = getMagColor(cell);
+              return gridjs.html(
+                `<span style="font-size: 18px; font-type: bold;color: ${color}">${cell}</span>`
+              );
+            },
+            attributes: (cell) => {
+              // add these attributes to the td elements only
+              if (cell) {
+                const color = getMagColor(cell);
+                return {
+                  "data-cell-content": cell,
+                  onclick: () => centerMap(row[2], row[3]),
+                  style: "cursor: pointer",
+                };
+              }
+            },
+          },
+        ],
+        style: {
+          table: {
+            "text-align": "center",
+            border: "3px solid #ccc",
+          },
+          th: {
+            "font-size": "13px",
+            color: "#000",
+          },
+        },
+        sort: true,
+        pagination: true,
+        data: tableData,
+      });
+
+      grid.render(document.getElementById("tableWrapper"));
 
       $("#datepicker")
         .datepicker({
           format: "yyyy-mm-dd",
           todayHighlight: true,
+          autoclose: true,
         })
         .on("hide", function (e) {
-          var fecha = $(this).datepicker("getFormattedDate");
+          const fecha = $(this).datepicker("getFormattedDate");
           if (fecha !== "") {
             window.location.href = "/date/" + fecha;
           }
@@ -179,16 +227,29 @@
 
       $("#datepicker").datepicker("setDate", new Date());
       // Espera a que se cargue el DOM
-      document.addEventListener("DOMContentLoaded", function () {
-        // Crea el elemento iframe
-        var iframe = document.createElement("iframe");
-        iframe.src = "{{ url_for('static', filename='mapa.html') }}";
-        iframe.classList.add("map-iframe");
 
-        // Agrega el iframe al contenedor
-        var container = document.getElementById("map-iframe");
-        container.appendChild(iframe);
-      });
+      // Crea el elemento iframe
+      const iframe = document.createElement("iframe");
+      iframe.src = "{{ url_for('static', filename='mapa.html') }}" ;
+      iframe.classList.add("map-iframe");
+
+      // Agrega el iframe al contenedor
+      const container = document.getElementById("map-iframe");
+      container.appendChild(iframe);
+
+      // Función para centrar el mapa en las coordenadas especificadas
+      function centerMap(lat, lon) {
+        iframe.contentWindow.postMessage(
+          { type: "center", lat: lat, lon: lon },
+          "*"
+        );
+      }
+
+      // Obtener el evento seleccionado de Flask y centrar el mapa en él
+      var selectedEvento = "{{ selected_evento }}"; // Obtener el valor del parámetro Flask
+      if (selectedEvento == "None") {
+      } else {
+      }
     </script>
   </body>
 </html>
