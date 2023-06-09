@@ -30,25 +30,6 @@
         width: 100%;
         height: 100%;
       }
-
-      .magnitud-item[data-magnitud^="3."] {
-        background-color: #62ab5d;
-      }
-      .magnitud-item[data-magnitud^="4."] {
-        background-color: #ffe13f;
-      }
-      .magnitud-item[data-magnitud^="5."] {
-        background-color: #f79b3f;
-      }
-      .magnitud-item[data-magnitud^="6."] {
-        background-color: #ea5354;
-      }
-      .magnitud-item[data-magnitud^="7."] {
-        background-color: #a85164;
-      }
-      .magnitud-item[data-magnitud^="8."] {
-        background-color: #ff3fff;
-      }
     </style>
   </head>
   <body>
@@ -88,6 +69,11 @@
             <li class="nav-item">
               <a class="nav-link active" aria-current="page" href="/heatmap"
                 >Heatmap</a
+              >
+            </li>
+            <li class="nav-item">
+              <a class="nav-link active" aria-current="page" href="/historico"
+                >Histórico</a
               >
             </li>
           </ul>
@@ -230,7 +216,7 @@
 
       // Crea el elemento iframe
       const iframe = document.createElement("iframe");
-      iframe.src = "{{ url_for('static', filename='mapa.html') }}" ;
+      iframe.src = "{{ url_for('static', filename='mapa.html') }}";
       iframe.classList.add("map-iframe");
 
       // Agrega el iframe al contenedor
