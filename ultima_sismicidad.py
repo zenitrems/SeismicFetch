@@ -32,16 +32,20 @@ collection_name = dbname["sismos"]
 async def consultar_ssn():
     """Peticion de datos"""
     start = time.perf_counter()
-    response = requests.get(
-        "http://www.ssn.unam.mx/sismicidad/ultimos/", timeout=60)
-    if response.status_code == 200:
-        finish = time.perf_counter()
-        print(colored(f"\nssn.unam.mx consultado en {finish - start:0.4f} segundos",
-                      "yellow"))
-        await buscar_datos(response)
-    else:
-        print(colored(
-            f"Error consultando SSN\n {response.status_code}", "red", attrs=["reverse"], ),)
+    try:
+        response = requests.get(
+            "http://www.ssn.unam.mx/sismicidad/ultimos/", timeout=60)
+        if response.status_code == 200:
+            finish = time.perf_counter()
+            print(colored(f"\nssn.unam.mx consultado en {finish - start:0.4f} segundos",
+                          "yellow"))
+            await buscar_datos(response)
+        else:
+            print(colored(
+                f"Error consultando SSN\n {response.status_code}", "red", attrs=["reverse"], ),)
+    except requests.Timeout as request_error:
+        print(colored("Request Timeout: \n",
+                      "red", attrs=["reverse"]), str(request_error))
 
 
 async def buscar_datos(response):
@@ -108,8 +112,10 @@ async def buscar_existentes(datos_nuevos):
         fecha_hora_mas_reciente = None
 
         if datos_existentes:
+            fecha_existente = datos_existentes[-1]['fecha']
+            hora_existente = datos_existentes[-1]['hora']
             fecha_hora_mas_reciente = datetime.strptime(
-                datos_existentes[-1]['fecha'] + " " + datos_existentes[-1]['hora'], "%Y-%m-%d %H:%M:%S")
+                fecha_existente + " " + hora_existente, "%Y-%m-%d %H:%M:%S")
             print(
                 colored(f"\nÚltimo evento: {fecha_hora_mas_reciente} Hora Centro", 'yellow'))
             await comparar_datos(datos_existentes, datos_nuevos)
@@ -160,7 +166,7 @@ async def guardar_nuevos(nuevos_datos):
                     await bot.send_evento(evento)
                 except TelegramError as bot_error:
                     print(colored("Error TelegramBot:\n",
-                                "red", attrs=["blink", "reverse"]), str(bot_error))
+                                  "red", attrs=["blink", "reverse"]), str(bot_error))
 
     except PyMongoError as mongo_error:
         print(colored("mongo error: \n", "red",
