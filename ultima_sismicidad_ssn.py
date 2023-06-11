@@ -1,8 +1,5 @@
 """
 Ultima Sismicidad SSN
-Author: Fernando Martínez
-github.com/zenitrems
-2023
 """
 
 import os
@@ -103,11 +100,10 @@ async def buscar_existentes(datos_nuevos):
     """busca datos existentes"""
     try:
         datos_existentes = []
-        oneday = datetime.now() - timedelta(days=5)
+        oneday = datetime.now() - timedelta(days=3)
         oneday_str = oneday.strftime("%Y-%m-%d")
-        data_collection = list(collection_name.find(
+        datos_existentes = list(collection_name.find(
             {"fecha": {"$gte": oneday_str}}))
-        datos_existentes = data_collection
 
         fecha_hora_mas_reciente = None
 
@@ -151,19 +147,25 @@ async def comparar_datos(datos_existentes, datos_nuevos):
     if nuevos_datos:
         nuevos_datos.reverse()
         await guardar_nuevos(nuevos_datos)
-    else:
-        print(colored("\nSin nuevos eventos", "yellow"))
+
+    print(colored("\nSin nuevos eventos", "yellow"))
 
 
 async def guardar_nuevos(nuevos_datos):
     """Guarda nuevos en mongo"""
     try:
         for evento in nuevos_datos:
-            collection_name.insert_one(evento)
             print(colored(f"Nuevo evento detectado\n {evento}", "red"),)
+            collection_name.insert_one(evento)
+            evento_template = f"<b>Sismo detectado SSN:</b>\n\n" \
+                f"<b>{evento['referencia']}</b>\n\n" \
+                f"<b>Timestamp:</b> {evento['fecha']}, {evento['hora']}\n" \
+                f"<b>Magnitud:</b> {evento['magnitud']}\n" \
+                f"<b>Profundidad:</b> {evento['profundidad']}\n"
+
             if evento['magnitud'] >= 4.0:
                 try:
-                    await bot.send_evento(evento)
+                    await bot.send_evento(evento_template)
                 except TelegramError as bot_error:
                     print(colored("Error TelegramBot:\n",
                                   "red", attrs=["blink", "reverse"]), str(bot_error))
@@ -172,7 +174,7 @@ async def guardar_nuevos(nuevos_datos):
         print(colored("mongo error: \n", "red",
               attrs=["reverse"]), str(mongo_error))
         try:
-            await bot.send_error("Error en mongo script terminado")
+            await bot.send_error("Error en mongo. Script terminado")
         except TelegramError as bot_error:
             print(colored("Error TelegramBot:\n", "red",
                   attrs=["blink", "reverse"]), str(bot_error))
