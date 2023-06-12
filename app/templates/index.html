@@ -67,13 +67,13 @@
               >
             </li>
             <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="/heatmap"
-                >Heatmap</a
+              <a class="nav-link active" aria-current="page" href="/historico"
+                >Histórico</a
               >
             </li>
             <li class="nav-item">
-              <a class="nav-link active" aria-current="page" href="/historico"
-                >Histórico</a
+              <a class="nav-link active" aria-current="page" href="/heatmap"
+                >Heatmap</a
               >
             </li>
           </ul>
@@ -122,23 +122,23 @@
     <script src="https://unpkg.com/gridjs/dist/gridjs.umd.js"></script>
     <script type="text/javascript">
       function getMagColor(cell) {
-        if (cell == 0) {
-          return "#fff";
-        } else if (cell < 3.0) {
-          return "#62ab5d";
+        let magColor = "#fff";
+        if (cell < 3.0) {
+          magColor = "#62ab5d";
         } else if (cell < 4.0) {
-          return "#ffc304";
+          magColor = "#ffc304";
         } else if (cell < 5.0) {
-          return "#f79b3f";
+          magColor = "#f79b3f";
         } else if (cell < 6.0) {
-          return "#ea5354";
+          magColor = "#ea5354";
         } else if (cell < 7.0) {
-          return "#a85164";
+          magColor = "#a85164";
         } else if (cell < 8.0) {
-          return "#ff3fff";
+          magColor = "#ff3fff";
         } else {
-          return "#9f3f9f";
+          magColor = "#9f3f9f";
         }
+        return magColor;
       }
 
       const eventos = "{{eventos|safe}}";
@@ -184,11 +184,9 @@
         style: {
           table: {
             "text-align": "center",
-            border: "3px solid #ccc",
           },
           th: {
             "font-size": "13px",
-            color: "#000",
           },
         },
         sort: true,
@@ -229,12 +227,6 @@
           { type: "center", lat: lat, lon: lon },
           "*"
         );
-      }
-
-      // Obtener el evento seleccionado de Flask y centrar el mapa en él
-      var selectedEvento = "{{ selected_evento }}"; // Obtener el valor del parámetro Flask
-      if (selectedEvento == "None") {
-      } else {
       }
     </script>
   </body>
