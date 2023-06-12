@@ -1,9 +1,9 @@
 Sismos Get
 =========
-bugs:/n
+#bugs:
 ssn no divide magnitud y PRELIMINAR cuando se detecta PRELIMINAR
 
-Todo:/n
+##Todo:
 pruebas unitarias
 mejor manejo de errores
 crear sistema de logging
