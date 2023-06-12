@@ -3,8 +3,9 @@ Usgs
 """
 import os
 import asyncio
-import requests
 import datetime
+import pytz
+import requests
 from termcolor import colored
 from dotenv import load_dotenv
 from pymongo.errors import PyMongoError
@@ -18,16 +19,17 @@ collection_name = mongo_db["sismos_usgs"]
 token = os.getenv('TELEGRAM_KEY')
 bot = MyBot(token)
 
+USG_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_hour.geojson"
+
 
 async def consulta_usgs():
     """Feed update last hour"""
     try:
         response = requests.get(
-            "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_hour.geojson", timeout=60)
+            USG_FEED, timeout=60)
         if response.status_code == 200:
             data = response.json()
             await procesar_datos(data)
-
     except requests.Timeout as request_error:
         print("request error", str(request_error))
 
@@ -35,14 +37,22 @@ async def consulta_usgs():
 async def procesar_datos(data):
     """Procesa datos"""
     document_data = []
+    utc_timezone = pytz.timezone('UTC')
+
     for feature in data['features']:
         feature_properties = feature['properties']
         feature_geo = feature['geometry']
         feature_id = feature['id']
+
+        # Miliseconds to seconds
         time_usgs = feature_properties['time'] / 1000
         time_updated = feature_properties['time'] / 1000
-        timestamp = datetime.datetime.fromtimestamp(time_usgs)
-        updated = datetime.datetime.fromtimestamp(time_updated)
+
+        timestamp = datetime.datetime.fromtimestamp(time_usgs, tz=utc_timezone)
+        updated = datetime.datetime.fromtimestamp(
+            time_updated, tz=utc_timezone)
+
+        # https://earthquake.usgs.gov/data/comcat/data-eventterms.php
         properties = {
             'mag': feature_properties['mag'],
             'place': feature_properties['place'],
