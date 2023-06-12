@@ -1,10 +1,10 @@
 """
 Sismos Get 
 """
-
+import pytz
 import os
 import concurrent.futures
-from datetime import datetime
+from datetime import datetime, timedelta
 from dotenv import load_dotenv
 import folium
 from folium import plugins
@@ -21,7 +21,7 @@ mexico_bounds = [[14.5, -120.9], [32.7, -85]]
 mexico_center = [19.4, -99.1]
 SSN_REF = '<a href=\"http://www.ssn.unam.mx/\">Servicio Sismógico Nacional</a>'
 UNAM_REF = '<a href=\"https://www.unam.mx/\">UNAM</a>'
-MAP_ATRIBUTION = f"{SSN_REF}|{UNAM_REF}"
+MAP_ATRIBUTION = f"{SSN_REF} | {UNAM_REF} | USGS"
 
 
 def get_marker_color(magnitud):
@@ -44,69 +44,95 @@ def get_marker_color(magnitud):
     return color
 
 
-def draw_points(points_data):
+def get_nested_value(data, keys):
+    value = data
+    for key in keys:
+        if isinstance(value, dict):
+            value = value.get(key)
+        elif isinstance(value, list):
+            value = [item.get(key) if isinstance(item, dict)
+                     else None for item in value]
+        else:
+            value = None
+        if value is None:
+            break
+    return value
+
+
+def draw_points(ssn_list, usgs_list):
     """Marker Maker for points"""
     mapa = folium.Map(
         location=mexico_center,
         tiles=os.getenv('MAP_TILE'),
         attr=MAP_ATRIBUTION,
-        min_zoom=5,
+        zoom_start=4,
+        min_zoom=3,
         zoom_control=False,
         control_scale=True,
-        max_bounds=True
     )
-    ultimo_sismo = points_data[-1]
-    lat_ultimo_sismo = ultimo_sismo['latitud']
-    lon_ultimo_sismo = ultimo_sismo['longitud']
 
-    # Agregar marcador de ultimo sismo
-    magnitud_ultimo_sismo = ultimo_sismo['magnitud']
-    color_magnitud = get_marker_color(magnitud_ultimo_sismo)
-    # Template popup ultimo sismo
-    popup_ultimo_sismo = f"""
-       <p>ultimo sismo</p>
-       <h4>{ultimo_sismo['referencia']}</h4>
-       <strong style="color:{color_magnitud}">M </strong><strong style="color:{color_magnitud}">{magnitud_ultimo_sismo}</strong><br>
-       <span>Profundidad: </span>{ultimo_sismo['profundidad']}<span> Kilometros</span></br>
-       <strong>{ultimo_sismo['fecha']}, {ultimo_sismo['hora']}</strong>
-       """
-    marker_ultimo_sismo = folium.Marker(
-        location=[lat_ultimo_sismo, lon_ultimo_sismo],
-        icon=plugins.BeautifyIcon(
-            icon_shape='circle',
-            border_width=1,
-            background_color=get_marker_color(magnitud_ultimo_sismo),
-            inner_icon_style='font-size:8px; padding: 4px; text-align:center;',
-            number=magnitud_ultimo_sismo
-        )
-    )
-    for point in points_data:
-        lat = point['latitud']
-        lon = point['longitud']
-        referencia = point['referencia']
-        magnitud = point['magnitud']
-        color_magnitud = get_marker_color(magnitud)
-        profundidad = point['profundidad']
-        fecha = point['fecha']
-        hora = point['hora']
-        # Template popup epicentro
+    grupos = [
+        {
+            'name': 'SSN',
+            'data': ssn_list,
+            'header_mapping': {
+                'lat': ['latitud'],
+                'lon': ['longitud'],
+                'ref': ['referencia'],
+                'mag': ['magnitud'],
+                'depth': ['profundidad'],
+                'date': ['fecha'],
+                'time': ['hora']
+            }
+        },
 
-        popup_content = f"""
-            <h4>{referencia}</h4>
-            <strong style="color:{color_magnitud}">M </strong><strong style="color:{color_magnitud}">{magnitud}</strong></br>
-            <span>Profundidad: </span>{profundidad}<span> Km</span><br>
-            <strong>{fecha}, {hora}</strong>
-            """
-        sismo_marker = folium.Marker(
-            location=[lat, lon],
-            icon=plugins.BeautifyIcon(
-                icon_shape='doughnut',
-                border_width=1,
-                background_color=color_magnitud,
+        {
+            'name': 'USGS',
+            'data': usgs_list,
+            'header_mapping': {
+                'lat': ['lat'],
+                'lon': ['lon'],
+                'depth': ['depht'],
+                'ref': ['ref'],
+                'mag': ['mag'],
+                'date': ['time'],
+                'time': ['time']
+            }
+        }
+    ]
+    for grupo in grupos:
+        group_name = grupo['name']
+        group_data = grupo['data']
+        header_mapping = grupo['header_mapping']
+        marker_group = folium.FeatureGroup(name=group_name)
+        for point in group_data:
+
+            lat = get_nested_value(point, header_mapping['lat'])
+            lon = get_nested_value(point, header_mapping['lon'])
+            magnitud = get_nested_value(point, header_mapping['mag'])
+            referencia = get_nested_value(point, header_mapping['ref'])
+            color_magnitud = get_marker_color(magnitud)
+            profundidad = get_nested_value(point, header_mapping['depth'])
+            fecha = get_nested_value(point, header_mapping['date'])
+            hora = get_nested_value(point, header_mapping['time'])
+            popup_content = f"""
+               <h5>{referencia}</h5>
+               <strong style="color:{color_magnitud}">M </strong><strong style="color:{color_magnitud}">{magnitud}</strong></br>
+               <span>Profundidad: </span>{profundidad}<span> Km</span><br>
+               <strong>{fecha}, {hora}</strong>
+           """
+            sismo_marker = folium.Marker(
+                location=[lat, lon],
+                icon=plugins.BeautifyIcon(
+                    icon_shape='doughnut',
+                    border_width=1,
+                    background_color=color_magnitud,
+                )
             )
-        )
-        sismo_marker.add_child(folium.Tooltip(text=popup_content))
-        sismo_marker.add_to(mapa)
+            sismo_marker.add_child(folium.Tooltip(text=popup_content))
+            sismo_marker.add_to(marker_group)
+
+        marker_group.add_to(mapa)
 
     listener_script = """
     <script>
@@ -128,37 +154,57 @@ def draw_points(points_data):
         });
     </script>
     """
-    marker_ultimo_sismo.add_child(folium.Tooltip(text=popup_ultimo_sismo))
-    marker_ultimo_sismo.add_to(mapa)
 
-    # Guardar el mapa en un archivo HTML
-    mapa.fit_bounds(mexico_bounds)
+    folium.LayerControl(position="bottomright").add_to(mapa)
     mapa.get_root().html.add_child(folium.Element(listener_script))
+    # Guardar el mapa en un archivo HTML
     mapa.save('static/mapa.html')
 
 
 @app.route('/')
 def index(start_date=None):
     """App Index"""
+    utc_timezone = pytz.timezone('UTC')
 
     # Establecer fecha actual si no se encontro solicitud de fecha
     if start_date is None:
         start_date = datetime.now()
 
+    start_date_utc = datetime.now(utc_timezone) - timedelta(days=1)
     start_date_str = start_date.strftime("%Y-%m-%d")
 
     # Mongo
     try:
-        collection_name = dbname["sismos"]
-        data_collection = list(collection_name.find(
-            {"fecha": start_date_str}))
+        ssn_collection = dbname["sismos"]
+        usgs_collection = dbname["sismos_usgs"]
 
+        ssn_list = list(ssn_collection.find(
+            {"fecha": start_date_str}
+        ))
+        usgs_list = list(usgs_collection.find(
+            {
+                'properties.time': {
+                    '$gte': start_date_utc
+                }
+            }
+        ))
+
+        usgs_data_simplify = []
+        for item in usgs_list:
+            document = {
+                'lat': item['geometry']['coordinates'][1],
+                'lon': item['geometry']['coordinates'][0],
+                'depht': item['geometry']['coordinates'][2],
+                'ref': item['properties']['place'],
+                'mag': item['properties']['mag'],
+                'time': item['properties']['time']
+            }
+            usgs_data_simplify.append(document)
+
+        draw_points(ssn_list, usgs_data_simplify)
+        return render_template('index.html', eventos=ssn_list)
     except PyMongoError as mongo_error:
         print("error mongo", str(mongo_error))
-
-    if data_collection:
-        draw_points(data_collection)
-    return render_template('index.html', eventos=data_collection)
 
 
 # Search Start date
@@ -178,8 +224,9 @@ def historico():
     except PyMongoError as mongo_error:
         print("mongoError", str(mongo_error))
 
-    if data_collection:
-        draw_points(data_collection)
+    usgs_list = []
+    draw_points(data_collection, usgs_list)
+
     return render_template('index.html', eventos=data_collection)
 
 # Heat Map Route
@@ -189,9 +236,9 @@ def historico():
 def heatmap():
     """Draw Heatmap"""
     mapa = folium.Map(
+        location=mexico_center,
         tiles=os.getenv('MAP_TILE'),
         attr=MAP_ATRIBUTION,
-        zoom_start=8,
         min_zoom=4,
         zoom_control=False,
         control_scale=True,
@@ -199,7 +246,7 @@ def heatmap():
     )
     mapa.fit_bounds(mexico_bounds)
     try:
-        collection_name = dbname["magAggregate"]
+        collection_name = dbname["sismos"]
         data_collection = list(collection_name.find())
     except PyMongoError as mongo_error:
         print("mongoError", str(mongo_error))
@@ -218,7 +265,7 @@ def heatmap():
         heat = plugins.HeatMap(
             data=heatmap_data,
             name='EventoHeatmap',
-            min_opacity=0.05,
+            min_opacity=0.1,
             radius=20,
             blur=18,
             gradient={0.1: 'blue', 0.3: 'lime',
@@ -227,7 +274,7 @@ def heatmap():
         heat.add_to(mapa)
 
         mapa.save('static/mapa.html')
-        return render_template('index.html')
+    return render_template('index.html')
 
 
 if __name__ == '__main__':
