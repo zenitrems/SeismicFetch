@@ -1,10 +1,13 @@
+"""
+Telegram bot
+"""
 import os
 import logging
+import asyncio
 from dotenv import load_dotenv
 from telegram import Update, Bot
 from telegram.ext import ApplicationBuilder, CommandHandler, MessageHandler, ContextTypes
 from telegram.error import TelegramError
-import asyncio
 load_dotenv()
 logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -13,28 +16,41 @@ logging.basicConfig(
 
 
 class MyBot:
+    """Bot class"""
+
     def __init__(self, token):
         self.token = token
         self.bot = Bot(token=self.token)
         self.app = ApplicationBuilder().token(token).build()
 
-    def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        context.bot.send_message(
+    async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """ /start command method """
+        await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Soy un robotsin")
 
-    def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+    async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle message from chat"""
         message_text = update.message.text
-        context.bot.send_message(
+        await context.bot.send_message(
             chat_id=update.effective_chat.id, text=message_text)
 
     async def send_evento(self, evento):
+        """send evento to chat"""
         try:
-            mensaje= f"Nuevo evento detectado:\n\n{evento}"
-            await self.bot.send_message(chat_id='1505812784', text=mensaje)
-        except TelegramError as e:
-            print(f'Error al enviar el mensaje: {e}')
+            await self.bot.send_message(chat_id='@earthquake_notify', text=evento, parse_mode="HTML")
+        except TelegramError as telegram_error:
+            print("Error al enviar el mensaje", str(telegram_error))
+
+    async def send_error(self, evento):
+        """send error to bot chat"""
+        try:
+            texto = f"<b>ERROR</b>\n\n</code>{evento}</code>"
+            await self.bot.send_message(chat_id='1505812784', text=texto, parse_mode="HTML")
+        except TelegramError as telegram_error:
+            print(f'Error al enviar el mensaje: {telegram_error}')
 
     def run(self):
+        """run method"""
         start_handler = CommandHandler('start', self.start)
         self.app.add_handler(start_handler)
 
@@ -48,5 +64,4 @@ class MyBot:
 if __name__ == '__main__':
     token = os.getenv('TELEGRAM_KEY')
     bot = MyBot(token)
-    evento = "Se ha encontrado un evento"
-    asyncio.run(bot.send_evento(evento))
+    asyncio.run(bot.run())
