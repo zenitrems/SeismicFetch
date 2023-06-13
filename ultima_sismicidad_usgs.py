@@ -93,7 +93,6 @@ async def procesar_datos(data):
         }
         document_data.append(document)
 
-
     await comparar_datos(document_data)
 
 
@@ -112,9 +111,9 @@ async def comparar_datos(document_data):
             if id_dato_nuevo in id_dato_existente:
                 print(f"El dato con ID {id_dato_nuevo} ya existe")
                 return
-            else:
-                print(f"El dato con ID {id_dato_nuevo} Es Nuevo")
-                nuevos_datos.append(dato)
+
+            print(f"El dato con ID {id_dato_nuevo} Es Nuevo")
+            nuevos_datos.append(dato)
         await almacena_datos(nuevos_datos)
 
 
@@ -129,8 +128,7 @@ async def almacena_datos(nuevos_datos):
             evento_template = f"<b>Sismo detectado USGS:</b>\n\n" \
                 f"<b>{dato_property['place']}</b>\n\n" \
                 f"<b>Magnitud:</b> {dato_property['mag']}\n" \
-                f"<b>Timestamp:</b> {dato_property['time']}\n" \
-                f"<b>updated:</b> {dato_property['updated']}\n"
+                f"<b>Timestamp:</b> {dato['timestamp_local']}\n"
             if dato_property['mag'] >= 4.0:
                 try:
                     await bot.send_evento(evento_template)

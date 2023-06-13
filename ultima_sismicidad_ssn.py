@@ -4,9 +4,7 @@ Ultima Sismicidad SSN
 
 import os
 import sys
-import json
 import asyncio
-import re
 import time
 from datetime import datetime, timedelta
 import pytz
@@ -72,34 +70,32 @@ async def acomodar_datos(rows):
         epi_span_tags = cells[2].find_all('span')
         epi_span_texts = [span.text for span in epi_span_tags]
         datetime_span_tags = cells[1].find_all('span')
-        datetime_span_texts = [
-            span.text for span in datetime_span_tags]
-        profundidad_split = cells[3].text.split(" ")[0]
+        datetime_span_texts = [span.text for span in datetime_span_tags]
         magnitud_text = cells[0].text.split(' ')[0]
-        
+
         fecha_hora_str = f"{datetime_span_texts[0].strip()} {datetime_span_texts[1].strip()}"
         fecha_hora = datetime.strptime(fecha_hora_str, '%Y-%m-%d %H:%M:%S')
-        utc_timestamp = fecha_hora.replace(tzinfo=pytz.timezone('America/Mexico_city')).astimezone(pytz.timezone('UTC'))
-        
-        if re.match(r'^PRELIMINAR', magnitud_text):
-            magnitud = magnitud_text.split(' ')[1]
-            is_preliminar = True
-            print(magnitud)
-        else:
-            magnitud = magnitud_text
-            is_preliminar = False
+        utc_timestamp = fecha_hora.replace(tzinfo=pytz.timezone(
+            'America/Mexico_city')).astimezone(pytz.timezone('UTC'))
+
+        magnitud_parts = magnitud_text.split(' ')
+        is_preliminar = magnitud_parts[1] if magnitud_parts[0] == 'PRELIMINAR' else False
+        magnitud = float(magnitud_parts[1]) if is_preliminar else float(
+            magnitud_parts[0])
+
         document = {
             'preliminar': is_preliminar,
             'fecha': datetime_span_texts[0].strip(),
             'hora': datetime_span_texts[1].strip(),
             'timestamp_utc': utc_timestamp,
-            'magnitud': float(magnitud),
+            'magnitud': magnitud,
             'latitud': float(epi_span_texts[1]),
             'longitud': float(epi_span_texts[2]),
-            'profundidad': float(profundidad_split),
+            'profundidad': float(cells[3].text.split(" ")[0]),
             'referencia': epi_span_texts[0].strip()
         }
         json_data.append(document)
+
     await buscar_existentes(json_data)
 
 
@@ -145,7 +141,7 @@ async def comparar_datos(datos_existentes, datos_nuevos):
         fechas_horas_existentes.add(fecha_hora)
     # Filtrar y guardar nuevos
     nuevos_datos = []
-    
+
     for dato in datos_nuevos:
         fecha_hora_dato = datetime.strptime(
             dato['fecha'] + " " + dato['hora'], "%Y-%m-%d %H:%M:%S")
