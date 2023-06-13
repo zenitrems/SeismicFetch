@@ -1,10 +1,10 @@
 """
 Sismos Get 
 """
-import pytz
 import os
 import concurrent.futures
 from datetime import datetime, timedelta
+import pytz
 from dotenv import load_dotenv
 import folium
 from folium import plugins
@@ -45,6 +45,7 @@ def get_marker_color(magnitud):
 
 
 def get_nested_value(data, keys):
+    """Get nested Value"""
     value = data
     for key in keys:
         if isinstance(value, dict):
@@ -70,7 +71,8 @@ def draw_points(ssn_list, usgs_list):
         zoom_control=False,
         control_scale=True,
     )
-
+    ultimo_evento_ssn = None
+    ultimo_evento_usgs = None
     grupos = [
         {
             'name': 'SSN',
@@ -85,7 +87,6 @@ def draw_points(ssn_list, usgs_list):
                 'time': ['hora']
             }
         },
-
         {
             'name': 'USGS',
             'data': usgs_list,
@@ -100,33 +101,25 @@ def draw_points(ssn_list, usgs_list):
             }
         }
     ]
+
     for grupo in grupos:
-        group_name = grupo['name']
-        group_data = grupo['data']
-        header_mapping = grupo['header_mapping']
+        group_name, group_data, header_mapping = grupo.values()
         marker_group = folium.FeatureGroup(name=group_name)
         for point in group_data:
-
-            lat = get_nested_value(point, header_mapping['lat'])
-            lon = get_nested_value(point, header_mapping['lon'])
-            magnitud = get_nested_value(point, header_mapping['mag'])
-            referencia = get_nested_value(point, header_mapping['ref'])
-            color_magnitud = get_marker_color(magnitud)
-            profundidad = get_nested_value(point, header_mapping['depth'])
-            fecha = get_nested_value(point, header_mapping['date'])
-            hora = get_nested_value(point, header_mapping['time'])
             popup_content = f"""
-               <h5>{referencia}</h5>
-               <strong style="color:{color_magnitud}">M </strong><strong style="color:{color_magnitud}">{magnitud}</strong></br>
-               <span>Profundidad: </span>{profundidad}<span> Km</span><br>
-               <strong>{fecha}, {hora}</strong>
+               <h5>{get_nested_value(point, header_mapping['ref'])}</h5>
+               <strong style="color:{get_marker_color(get_nested_value(point, header_mapping['mag']))}">M {get_nested_value(point, header_mapping['mag'])}</strong></br>
+               <span>Profundidad: </span>{ get_nested_value(point, header_mapping['depth'])}<span> Km</span><br>
+               <strong>{get_nested_value(point, header_mapping['date'])}, {get_nested_value(point, header_mapping['time'])}</strong>
            """
             sismo_marker = folium.Marker(
-                location=[lat, lon],
+                location=[get_nested_value(point, header_mapping['lat']), get_nested_value(
+                    point, header_mapping['lon'])],
                 icon=plugins.BeautifyIcon(
                     icon_shape='doughnut',
                     border_width=1,
-                    background_color=color_magnitud,
+                    background_color=get_marker_color(
+                        get_nested_value(point, header_mapping['mag']))
                 )
             )
             sismo_marker.add_child(folium.Tooltip(text=popup_content))
@@ -169,17 +162,23 @@ def index(start_date=None):
     # Establecer fecha actual si no se encontro solicitud de fecha
     if start_date is None:
         start_date = datetime.now()
+        start_date_utc = datetime.now(utc_timezone) - timedelta(days=1)
 
-    start_date_utc = datetime.now(utc_timezone) - timedelta(days=1)
-    start_date_str = start_date.strftime("%Y-%m-%d")
+   
 
     # Mongo
     try:
-        ssn_collection = dbname["sismos"]
-        usgs_collection = dbname["sismos_usgs"]
+        ssn_collection = dbname["sismicidad_ssn"]
+        usgs_collection = dbname["sismicidad_usgs"]
 
         ssn_list = list(ssn_collection.find(
-            {"fecha": start_date_str}
+
+            {
+                "timestamp_utc": {
+                    '$gte': start_date_utc
+                }
+            }
+
         ))
         usgs_list = list(usgs_collection.find(
             {
@@ -188,23 +187,23 @@ def index(start_date=None):
                 }
             }
         ))
-
-        usgs_data_simplify = []
-        for item in usgs_list:
-            document = {
-                'lat': item['geometry']['coordinates'][1],
-                'lon': item['geometry']['coordinates'][0],
-                'depht': item['geometry']['coordinates'][2],
-                'ref': item['properties']['place'],
-                'mag': item['properties']['mag'],
-                'time': item['properties']['time']
-            }
-            usgs_data_simplify.append(document)
-
-        draw_points(ssn_list, usgs_data_simplify)
-        return render_template('index.html', eventos=ssn_list)
     except PyMongoError as mongo_error:
         print("error mongo", str(mongo_error))
+
+    usgs_data_simplify = []
+    for item in usgs_list:
+        document = {
+            'lat': item['geometry']['coordinates'][1],
+            'lon': item['geometry']['coordinates'][0],
+            'depht': item['geometry']['coordinates'][2],
+            'ref': item['properties']['place'],
+            'mag': item['properties']['mag'],
+            'time': item['properties']['time']
+        }
+        usgs_data_simplify.append(document)
+
+    draw_points(ssn_list, usgs_data_simplify)
+    return render_template('index.html', eventos=ssn_list)
 
 
 # Search Start date
