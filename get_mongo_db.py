@@ -8,13 +8,13 @@ class CustomCommandLogger(monitoring.CommandListener):
     """Custom"""
 
     def started(self, event):
-        print("Comando MongoDB iniciado: %s" % (event.command_name))
+        print(f"Comando MongoDB iniciado: {event.command_name}")
 
     def succeeded(self, event):
-        print("Comando MongoDB exitoso: %s" % (event.command_name))
+        print(f"Comando MongoDB exitoso: {event.command_name}")
 
     def failed(self, event):
-        print("Comando MongoDB fallido: %s" % (event.command_name))
+        print(f"Comando MongoDB fallido: {event.command_name}")
 
 
 # Configura el logger personalizado
@@ -25,7 +25,7 @@ def mongodb():
     """Mongo init"""
     client = MongoClient("mongodb://localhost",
                          event_listeners=[command_logger])
-    return client['sismicidad_SSN']
+    return client['sismicidad']
 
 
 if __name__ == "__main__":

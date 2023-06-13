@@ -25,7 +25,7 @@ def mongodb():
     """Mongo init"""
     client = MongoClient("mongodb://localhost",
                          event_listeners=[command_logger])
-    return client['sismicidad_SSN']
+    return client['sismicidad']
 
 
 if __name__ == "__main__":
