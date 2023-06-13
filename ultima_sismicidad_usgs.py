@@ -14,12 +14,12 @@ from get_mongo_db import mongodb
 from telegram_bot import MyBot
 load_dotenv()
 mongo_db = mongodb()
-collection_name = mongo_db["sismos_usgs"]
+collection_name = mongo_db["sismicidad_usgs"]
 
 token = os.getenv('TELEGRAM_KEY')
 bot = MyBot(token)
 
-USG_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/1.0_hour.geojson"
+USG_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson"
 
 
 async def consulta_usgs():
@@ -51,6 +51,8 @@ async def procesar_datos(data):
         timestamp = datetime.datetime.fromtimestamp(time_usgs, tz=utc_timezone)
         updated = datetime.datetime.fromtimestamp(
             time_updated, tz=utc_timezone)
+        timestamp_local = timestamp.replace(tzinfo=utc_timezone).astimezone(
+            pytz.timezone('America/Mexico_City'))
 
         # https://earthquake.usgs.gov/data/comcat/data-eventterms.php
         properties = {
@@ -86,9 +88,11 @@ async def procesar_datos(data):
         document = {
             'properties': properties,
             'geometry': geometry,
+            'timestamp_local': timestamp_local,
             'usgs_id': feature_id
         }
         document_data.append(document)
+
 
     await comparar_datos(document_data)
 
@@ -106,9 +110,10 @@ async def comparar_datos(document_data):
         for dato in document_data:
             id_dato_nuevo = dato['usgs_id']
             if id_dato_nuevo in id_dato_existente:
-                print("El dato con ID {} ya existe".format(id_dato_nuevo))
+                print(f"El dato con ID {id_dato_nuevo} ya existe")
+                return
             else:
-                print("El dato con ID {} es nuevo".format(id_dato_nuevo))
+                print(f"El dato con ID {id_dato_nuevo} Es Nuevo")
                 nuevos_datos.append(dato)
         await almacena_datos(nuevos_datos)
 

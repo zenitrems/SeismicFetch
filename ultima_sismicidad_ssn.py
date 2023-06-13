@@ -9,6 +9,7 @@ import asyncio
 import re
 import time
 from datetime import datetime, timedelta
+import pytz
 from termcolor import colored
 from dotenv import load_dotenv
 import requests
@@ -23,7 +24,7 @@ load_dotenv()
 token = os.getenv('TELEGRAM_KEY')
 bot = MyBot(token)
 dbname = mongodb()
-collection_name = dbname["sismos"]
+collection_name = dbname["sismicidad_ssn"]
 
 
 async def consultar_ssn():
@@ -75,9 +76,15 @@ async def acomodar_datos(rows):
             span.text for span in datetime_span_tags]
         profundidad_split = cells[3].text.split(" ")[0]
         magnitud_text = cells[0].text.split(' ')[0]
+        
+        fecha_hora_str = f"{datetime_span_texts[0].strip()} {datetime_span_texts[1].strip()}"
+        fecha_hora = datetime.strptime(fecha_hora_str, '%Y-%m-%d %H:%M:%S')
+        utc_timestamp = fecha_hora.replace(tzinfo=pytz.timezone('America/Mexico_city')).astimezone(pytz.timezone('UTC'))
+        
         if re.match(r'^PRELIMINAR', magnitud_text):
             magnitud = magnitud_text.split(' ')[1]
             is_preliminar = True
+            print(magnitud)
         else:
             magnitud = magnitud_text
             is_preliminar = False
@@ -85,6 +92,7 @@ async def acomodar_datos(rows):
             'preliminar': is_preliminar,
             'fecha': datetime_span_texts[0].strip(),
             'hora': datetime_span_texts[1].strip(),
+            'timestamp_utc': utc_timestamp,
             'magnitud': float(magnitud),
             'latitud': float(epi_span_texts[1]),
             'longitud': float(epi_span_texts[2]),
@@ -92,8 +100,7 @@ async def acomodar_datos(rows):
             'referencia': epi_span_texts[0].strip()
         }
         json_data.append(document)
-    datos_nuevos = json.dumps(json_data, indent=4)
-    await buscar_existentes(datos_nuevos)
+    await buscar_existentes(json_data)
 
 
 async def buscar_existentes(datos_nuevos):
@@ -138,8 +145,8 @@ async def comparar_datos(datos_existentes, datos_nuevos):
         fechas_horas_existentes.add(fecha_hora)
     # Filtrar y guardar nuevos
     nuevos_datos = []
-    json_data_list = json.loads(datos_nuevos)
-    for dato in json_data_list:
+    
+    for dato in datos_nuevos:
         fecha_hora_dato = datetime.strptime(
             dato['fecha'] + " " + dato['hora'], "%Y-%m-%d %H:%M:%S")
         if fecha_hora_dato >= fecha_limite and fecha_hora_dato not in fechas_horas_existentes:
