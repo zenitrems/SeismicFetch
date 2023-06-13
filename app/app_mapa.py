@@ -161,10 +161,9 @@ def index(start_date=None):
 
     # Establecer fecha actual si no se encontro solicitud de fecha
     if start_date is None:
-        start_date = datetime.now()
-        start_date_utc = datetime.now(utc_timezone) - timedelta(days=1)
+        start_date = datetime.now(utc_timezone) - timedelta(days=1)
 
-   
+    print(start_date)
 
     # Mongo
     try:
@@ -175,7 +174,7 @@ def index(start_date=None):
 
             {
                 "timestamp_utc": {
-                    '$gte': start_date_utc
+                    '$gte': start_date
                 }
             }
 
@@ -183,7 +182,7 @@ def index(start_date=None):
         usgs_list = list(usgs_collection.find(
             {
                 'properties.time': {
-                    '$gte': start_date_utc
+                    '$gte': start_date
                 }
             }
         ))
@@ -210,7 +209,8 @@ def index(start_date=None):
 @app.route('/date/<start_date>')
 def index_with_date(start_date):
     """Index for date"""
-    start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+    fecha_completa_str = start_date + ' 00:00:00.000000+00:00'
+    start_date = datetime.strptime(fecha_completa_str, '%Y-%m-%d %H:%M:%S.%f%z')
     return index(start_date)
 
 
@@ -245,7 +245,7 @@ def heatmap():
     )
     mapa.fit_bounds(mexico_bounds)
     try:
-        collection_name = dbname["sismos"]
+        collection_name = dbname["sismicidad_ssn"]
         data_collection = list(collection_name.find())
     except PyMongoError as mongo_error:
         print("mongoError", str(mongo_error))
