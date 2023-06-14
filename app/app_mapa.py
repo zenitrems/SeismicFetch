@@ -71,8 +71,6 @@ def draw_points(ssn_list, usgs_list):
         zoom_control=False,
         control_scale=True,
     )
-    ultimo_evento_ssn = None
-    ultimo_evento_usgs = None
     grupos = [
         {
             'name': 'SSN',
@@ -83,8 +81,7 @@ def draw_points(ssn_list, usgs_list):
                 'ref': ['referencia'],
                 'mag': ['magnitud'],
                 'depth': ['profundidad'],
-                'date': ['fecha'],
-                'time': ['hora']
+                'time': ['timestamp_utc']
             }
         },
         {
@@ -96,7 +93,6 @@ def draw_points(ssn_list, usgs_list):
                 'depth': ['depht'],
                 'ref': ['ref'],
                 'mag': ['mag'],
-                'date': ['time'],
                 'time': ['time']
             }
         }
@@ -107,10 +103,12 @@ def draw_points(ssn_list, usgs_list):
         marker_group = folium.FeatureGroup(name=group_name)
         for point in group_data:
             popup_content = f"""
-               <h5>{get_nested_value(point, header_mapping['ref'])}</h5>
+            <div style="font-size: 13px;">
+               <strong>{get_nested_value(point, header_mapping['ref'])}</strong></br>
                <strong style="color:{get_marker_color(get_nested_value(point, header_mapping['mag']))}">M {get_nested_value(point, header_mapping['mag'])}</strong></br>
-               <span>Profundidad: </span>{ get_nested_value(point, header_mapping['depth'])}<span> Km</span><br>
-               <strong>{get_nested_value(point, header_mapping['date'])}, {get_nested_value(point, header_mapping['time'])}</strong>
+               <span>Profundidad: {get_nested_value(point, header_mapping['depth'])}Km</span><br>
+               <strong>{get_nested_value(point, header_mapping['time'])} UTC</strong>
+            </div>
            """
             sismo_marker = folium.Marker(
                 location=[get_nested_value(point, header_mapping['lat']), get_nested_value(
@@ -161,7 +159,7 @@ def index(start_date=None):
 
     # Establecer fecha actual si no se encontro solicitud de fecha
     if start_date is None:
-        start_date = datetime.now(utc_timezone) - timedelta(days=1)
+        start_date = datetime.now(utc_timezone) - timedelta(hours=24)
 
     print(start_date)
 
@@ -210,7 +208,8 @@ def index(start_date=None):
 def index_with_date(start_date):
     """Index for date"""
     fecha_completa_str = start_date + ' 00:00:00.000000+00:00'
-    start_date = datetime.strptime(fecha_completa_str, '%Y-%m-%d %H:%M:%S.%f%z')
+    start_date = datetime.strptime(
+        fecha_completa_str, '%Y-%m-%d %H:%M:%S.%f%z')
     return index(start_date)
 
 
