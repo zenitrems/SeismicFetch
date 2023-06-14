@@ -2,6 +2,7 @@
 Sismos Get 
 """
 import os
+import json
 import concurrent.futures
 from datetime import datetime, timedelta
 import pytz
@@ -21,7 +22,36 @@ mexico_bounds = [[14.5, -120.9], [32.7, -85]]
 mexico_center = [19.4, -99.1]
 SSN_REF = '<a href=\"http://www.ssn.unam.mx/\">Servicio Sismógico Nacional</a>'
 UNAM_REF = '<a href=\"https://www.unam.mx/\">UNAM</a>'
-MAP_ATRIBUTION = f"{SSN_REF} | {UNAM_REF} | USGS"
+NORDPIL_REF = '<a href=\"https://nordpil.com/\">Nordpil</a>'
+MAP_ATRIBUTION = f"{SSN_REF} | {UNAM_REF} | USGS | {NORDPIL_REF}"
+MAP_TILE = os.getenv('MAP_TILE')
+
+MAPBOX_LAYER = folium.TileLayer(
+    tiles=MAP_TILE,
+    attr=MAP_ATRIBUTION,
+    name="Mapbox",
+    min_zoom=3,
+    control=False
+)
+
+
+def style_function(features):
+    """style function for GeoJson"""
+    return {
+        'color': 'red',  # Color de la línea
+        'weight': 1,     # Grosor de la línea
+        'fillColor': 'yellow',  # Color de relleno
+        'fillOpacity': 0.5  # Opacidad del relleno
+    }
+
+
+with open('boundaries.json', 'r', encoding='utf-8', ) as file:
+    geojson_data = json.load(file)
+tectonic_boundaries = folium.GeoJson(
+    data=geojson_data,
+    name='Tectonic Plates Boundaries',
+    style_function=style_function
+)
 
 
 def get_marker_color(magnitud):
@@ -63,14 +93,13 @@ def get_nested_value(data, keys):
 def draw_points(ssn_list, usgs_list):
     """Marker Maker for points"""
     mapa = folium.Map(
+        tiles=MAPBOX_LAYER,
         location=mexico_center,
-        tiles=os.getenv('MAP_TILE'),
-        attr=MAP_ATRIBUTION,
         zoom_start=4,
-        min_zoom=3,
         zoom_control=False,
         control_scale=True,
     )
+
     grupos = [
         {
             'name': 'SSN',
@@ -103,18 +132,17 @@ def draw_points(ssn_list, usgs_list):
     ultimo_evento_usgs = None
 
     for evento in ssn_list:
-        timestamp = evento['time']
-        if ultimo_evento_ssn is None or timestamp > ultimo_evento_ssn:
-            ultimo_evento_ssn = timestamp
+        if ultimo_evento_ssn is None or evento['time'] > ultimo_evento_ssn:
+            ultimo_evento_ssn = evento['time']
     for evento in usgs_list:
-        timestamp = evento['time']
-        if ultimo_evento_usgs is None or timestamp > ultimo_evento_usgs:
-            ultimo_evento_usgs = timestamp
+        if ultimo_evento_usgs is None or evento['time'] > ultimo_evento_usgs:
+            ultimo_evento_usgs = evento['time']
 
     for grupo in grupos:
         group_name, group_data, header_mapping = grupo.values()
         marker_group = folium.FeatureGroup(name=group_name)
         for point in group_data:
+
             sismo_marker = folium.Marker(
                 location=[get_nested_value(point, header_mapping['lat']), get_nested_value(
                     point, header_mapping['lon'])],
@@ -136,7 +164,7 @@ def draw_points(ssn_list, usgs_list):
                 sismo_marker.add_child(folium.Popup(
                     'Último sismo USGS', max_width=100))
 
-            popup_content = f"""
+            tooltip_content = f"""
             <div style="font-size: 12px;">
                <strong>{get_nested_value(point, header_mapping['ref'])}</strong></br>
                <strong style="color:{get_marker_color(get_nested_value(point, header_mapping['mag']))}">M {get_nested_value(point, header_mapping['mag'])}</strong></br>
@@ -145,7 +173,7 @@ def draw_points(ssn_list, usgs_list):
                <span>{get_nested_value(point, header_mapping['local_time'])} UTC-6</span>
             </div>
            """
-            sismo_marker.add_child(folium.Tooltip(text=popup_content))
+            sismo_marker.add_child(folium.Tooltip(text=tooltip_content))
             sismo_marker.add_to(marker_group)
 
         marker_group.add_to(mapa)
@@ -171,10 +199,48 @@ def draw_points(ssn_list, usgs_list):
     </script>
     """
 
-    folium.LayerControl(position="bottomright").add_to(mapa)
     mapa.get_root().html.add_child(folium.Element(listener_script))
+    tectonic_boundaries.add_to(mapa)
+    folium.LayerControl(position="bottomright").add_to(mapa)
     # Guardar el mapa en un archivo HTML
     mapa.save('static/mapa.html')
+
+
+def data_format(ssn_list, usgs_list, ssn_data_simplify, usgs_data_simplify):
+    """Format Data"""
+    for item in ssn_list:
+        timestamp_local_str = f"{item['fecha']} {item['hora']}"
+        timestamp_local_format = timestamp_local_str
+        timestamp_local = datetime.strptime(
+            timestamp_local_format, "%Y-%m-%d %H:%M:%S")
+        document = {
+            'lat': item['latitud'],
+            'lon': item['longitud'],
+            'depth': item['profundidad'],
+            'ref': item['referencia'],
+            'mag': item['magnitud'],
+            'time': item['timestamp_utc'],
+            'local_time': timestamp_local
+        }
+        ssn_data_simplify.append(document)
+
+    for item in usgs_list:
+        time = item['properties']['time']
+        time_str = datetime.strftime(time, "%Y-%m-%d %H:%M:%S")
+        local_time = datetime.strptime(
+            item['timestamp_local'], "%Y-%m-%dT%H:%M:%S.%f%z")
+        local_time_str = datetime.strftime(local_time, "%Y-%m-%d %H:%M:%S")
+        document = {
+            'lat': item['geometry']['coordinates'][1],
+            'lon': item['geometry']['coordinates'][0],
+            'depth': item['geometry']['coordinates'][2],
+            'ref': item['properties']['place'],
+            'mag': item['properties']['mag'],
+            'time': time_str,
+            'local_time': local_time_str
+        }
+        usgs_data_simplify.append(document)
+    return ssn_data_simplify, usgs_data_simplify
 
 
 @app.route('/')
@@ -209,42 +275,10 @@ def index(start_date=None):
         ))
     except PyMongoError as mongo_error:
         print("error mongo", str(mongo_error))
+
     ssn_data_simplify = []
     usgs_data_simplify = []
-
-    for item in ssn_list:
-        timestamp_local_str = f"{item['fecha']} {item['hora']}"
-        timestamp_local_format = timestamp_local_str
-        timestamp_local = datetime.strptime(
-            timestamp_local_format, "%Y-%m-%d %H:%M:%S")
-        document = {
-            'lat': item['latitud'],
-            'lon': item['longitud'],
-            'depth': item['profundidad'],
-            'ref': item['referencia'],
-            'mag': item['magnitud'],
-            'time': item['timestamp_utc'],
-            'local_time': timestamp_local
-        }
-        ssn_data_simplify.append(document)
-
-    for item in usgs_list:
-        time = item['properties']['time']
-        time_str = datetime.strftime(time, "%Y-%m-%d %H:%M:%S")
-        local_time = datetime.strptime(
-            item['timestamp_local'], "%Y-%m-%dT%H:%M:%S.%f%z")
-        local_time_str = datetime.strftime(local_time, "%Y-%m-%d %H:%M:%S")
-        document = {
-            'lat': item['geometry']['coordinates'][1],
-            'lon': item['geometry']['coordinates'][0],
-            'depth': item['geometry']['coordinates'][2],
-            'ref': item['properties']['place'],
-            'mag': item['properties']['mag'],
-            'time': time_str,
-            'local_time': local_time_str
-        }
-        usgs_data_simplify.append(document)
-
+    data_format(ssn_list, usgs_list, ssn_data_simplify, usgs_data_simplify)
     draw_points(ssn_data_simplify, usgs_data_simplify)
     return render_template('index.html', eventos=ssn_data_simplify)
 
@@ -262,16 +296,20 @@ def index_with_date(start_date):
 @app.route('/historico')
 def historico():
     """Major Earthquakes"""
+    collection_name = DATABASE["magAggregate"]
     try:
-        collection_name = DATABASE["magAggregate"]
-        data_collection = list(collection_name.find())
+        ssn_list = list(collection_name.find())
     except PyMongoError as mongo_error:
         print("mongoError", str(mongo_error))
 
     usgs_list = []
-    draw_points(data_collection, usgs_list)
+    ssn_data_simplify = []
+    usgs_data_simplify = []
+    data_format(ssn_list, usgs_list, ssn_data_simplify, usgs_data_simplify)
 
-    return render_template('index.html', eventos=data_collection)
+    draw_points(ssn_data_simplify, usgs_data_simplify)
+
+    return render_template('index.html', eventos=ssn_data_simplify)
 
 # HeatMap Route
 
@@ -280,17 +318,12 @@ def historico():
 def heatmap():
     """Draw Heatmap"""
     mapa = folium.Map(
+        tiles=MAPBOX_LAYER,
         location=mexico_center,
-        tiles=os.getenv('MAP_TILE'),
-        attr=MAP_ATRIBUTION,
-        max_zoom=5,
-        min_zoom=3,
+        zoom_start=4,
         zoom_control=False,
         control_scale=True,
-        max_bounds=True,
-        crs="EPSG4326"
     )
-    mapa.fit_bounds(mexico_bounds)
     try:
         collection_name = DATABASE["magAggregate"]
         data_collection = list(collection_name.find())
@@ -318,8 +351,8 @@ def heatmap():
                       0.5: 'yellow', 0.8:  'orange', 1: 'red'},
         )
         heat.add_to(mapa)
-
-        mapa.save('static/mapa.html')
+    tectonic_boundaries.add_to(mapa)
+    mapa.save('static/mapa.html')
     return render_template('index.html')
 
 
