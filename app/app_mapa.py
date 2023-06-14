@@ -15,7 +15,7 @@ from get_mongo_db import mongodb
 
 load_dotenv()
 app = Flask(__name__)
-dbname = mongodb()
+DATABASE = mongodb()
 
 mexico_bounds = [[14.5, -120.9], [32.7, -85]]
 mexico_center = [19.4, -99.1]
@@ -76,12 +76,13 @@ def draw_points(ssn_list, usgs_list):
             'name': 'SSN',
             'data': ssn_list,
             'header_mapping': {
-                'lat': ['latitud'],
-                'lon': ['longitud'],
-                'ref': ['referencia'],
-                'mag': ['magnitud'],
-                'depth': ['profundidad'],
-                'time': ['timestamp_utc']
+                'lat': ['lat'],
+                'lon': ['lon'],
+                'ref': ['ref'],
+                'mag': ['mag'],
+                'depth': ['depth'],
+                'time': ['time'],
+                'local_time': ['local_time']
             }
         },
         {
@@ -90,26 +91,30 @@ def draw_points(ssn_list, usgs_list):
             'header_mapping': {
                 'lat': ['lat'],
                 'lon': ['lon'],
-                'depth': ['depht'],
+                'depth': ['depth'],
                 'ref': ['ref'],
                 'mag': ['mag'],
-                'time': ['time']
+                'time': ['time'],
+                'local_time': ['local_time']
             }
         }
     ]
+    ultimo_evento_ssn = None
+    ultimo_evento_usgs = None
+
+    for evento in ssn_list:
+        timestamp = evento['time']
+        if ultimo_evento_ssn is None or timestamp > ultimo_evento_ssn:
+            ultimo_evento_ssn = timestamp
+    for evento in usgs_list:
+        timestamp = evento['time']
+        if ultimo_evento_usgs is None or timestamp > ultimo_evento_usgs:
+            ultimo_evento_usgs = timestamp
 
     for grupo in grupos:
         group_name, group_data, header_mapping = grupo.values()
         marker_group = folium.FeatureGroup(name=group_name)
         for point in group_data:
-            popup_content = f"""
-            <div style="font-size: 13px;">
-               <strong>{get_nested_value(point, header_mapping['ref'])}</strong></br>
-               <strong style="color:{get_marker_color(get_nested_value(point, header_mapping['mag']))}">M {get_nested_value(point, header_mapping['mag'])}</strong></br>
-               <span>Profundidad: {get_nested_value(point, header_mapping['depth'])}Km</span><br>
-               <strong>{get_nested_value(point, header_mapping['time'])} UTC</strong>
-            </div>
-           """
             sismo_marker = folium.Marker(
                 location=[get_nested_value(point, header_mapping['lat']), get_nested_value(
                     point, header_mapping['lon'])],
@@ -120,6 +125,26 @@ def draw_points(ssn_list, usgs_list):
                         get_nested_value(point, header_mapping['mag']))
                 )
             )
+
+            if group_name == 'SSN' and get_nested_value(point, header_mapping['time']) == ultimo_evento_ssn:
+                # Aplicar estilo especial al marcador del último sismo de SSN
+                sismo_marker.add_child(folium.Popup(
+                    'Último sismo SSN', max_width=100, show=True))
+
+            elif group_name == 'USGS' and get_nested_value(point, header_mapping['time']) == ultimo_evento_usgs:
+                # Aplicar estilo especial al marcador del último sismo de USGS
+                sismo_marker.add_child(folium.Popup(
+                    'Último sismo USGS', max_width=100))
+
+            popup_content = f"""
+            <div style="font-size: 12px;">
+               <strong>{get_nested_value(point, header_mapping['ref'])}</strong></br>
+               <strong style="color:{get_marker_color(get_nested_value(point, header_mapping['mag']))}">M {get_nested_value(point, header_mapping['mag'])}</strong></br>
+               <span>Profundidad: {get_nested_value(point, header_mapping['depth'])} Km</span><br>
+               <span>{get_nested_value(point, header_mapping['time'])} UTC</span></br>
+               <span>{get_nested_value(point, header_mapping['local_time'])} UTC-6</span>
+            </div>
+           """
             sismo_marker.add_child(folium.Tooltip(text=popup_content))
             sismo_marker.add_to(marker_group)
 
@@ -161,12 +186,10 @@ def index(start_date=None):
     if start_date is None:
         start_date = datetime.now(utc_timezone) - timedelta(hours=24)
 
-    print(start_date)
-
     # Mongo
     try:
-        ssn_collection = dbname["sismicidad_ssn"]
-        usgs_collection = dbname["sismicidad_usgs"]
+        ssn_collection = DATABASE["sismicidad_ssn"]
+        usgs_collection = DATABASE["sismicidad_usgs"]
 
         ssn_list = list(ssn_collection.find(
 
@@ -186,21 +209,44 @@ def index(start_date=None):
         ))
     except PyMongoError as mongo_error:
         print("error mongo", str(mongo_error))
-
+    ssn_data_simplify = []
     usgs_data_simplify = []
+
+    for item in ssn_list:
+        timestamp_local_str = f"{item['fecha']} {item['hora']}"
+        timestamp_local_format = timestamp_local_str
+        timestamp_local = datetime.strptime(
+            timestamp_local_format, "%Y-%m-%d %H:%M:%S")
+        document = {
+            'lat': item['latitud'],
+            'lon': item['longitud'],
+            'depth': item['profundidad'],
+            'ref': item['referencia'],
+            'mag': item['magnitud'],
+            'time': item['timestamp_utc'],
+            'local_time': timestamp_local
+        }
+        ssn_data_simplify.append(document)
+
     for item in usgs_list:
+        time = item['properties']['time']
+        time_str = datetime.strftime(time, "%Y-%m-%d %H:%M:%S")
+        local_time = datetime.strptime(
+            item['timestamp_local'], "%Y-%m-%dT%H:%M:%S.%f%z")
+        local_time_str = datetime.strftime(local_time, "%Y-%m-%d %H:%M:%S")
         document = {
             'lat': item['geometry']['coordinates'][1],
             'lon': item['geometry']['coordinates'][0],
-            'depht': item['geometry']['coordinates'][2],
+            'depth': item['geometry']['coordinates'][2],
             'ref': item['properties']['place'],
             'mag': item['properties']['mag'],
-            'time': item['properties']['time']
+            'time': time_str,
+            'local_time': local_time_str
         }
         usgs_data_simplify.append(document)
 
-    draw_points(ssn_list, usgs_data_simplify)
-    return render_template('index.html', eventos=ssn_list)
+    draw_points(ssn_data_simplify, usgs_data_simplify)
+    return render_template('index.html', eventos=ssn_data_simplify)
 
 
 # Search Start date
@@ -217,7 +263,7 @@ def index_with_date(start_date):
 def historico():
     """Major Earthquakes"""
     try:
-        collection_name = dbname["magAggregate"]
+        collection_name = DATABASE["magAggregate"]
         data_collection = list(collection_name.find())
     except PyMongoError as mongo_error:
         print("mongoError", str(mongo_error))
@@ -227,7 +273,7 @@ def historico():
 
     return render_template('index.html', eventos=data_collection)
 
-# Heat Map Route
+# HeatMap Route
 
 
 @app.route('/heatmap')
@@ -237,14 +283,16 @@ def heatmap():
         location=mexico_center,
         tiles=os.getenv('MAP_TILE'),
         attr=MAP_ATRIBUTION,
-        min_zoom=4,
+        max_zoom=5,
+        min_zoom=3,
         zoom_control=False,
         control_scale=True,
-        max_bounds=True
+        max_bounds=True,
+        crs="EPSG4326"
     )
     mapa.fit_bounds(mexico_bounds)
     try:
-        collection_name = dbname["sismicidad_ssn"]
+        collection_name = DATABASE["magAggregate"]
         data_collection = list(collection_name.find())
     except PyMongoError as mongo_error:
         print("mongoError", str(mongo_error))
