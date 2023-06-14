@@ -24,3 +24,6 @@
 ## Bugs conocidos:
 
     ssn no divide magnitud y PRELIMINAR cuando se detecta PRELIMINAR
+    magnitud = float(magnitud_parts[1]) if is_preliminar else float(
+    IndexError: list index out of range
+    (sismosGet) pcrig@UbuntuOnRig:~/devProj/sismosGet$ python ultima_sismicidad_ssn.py
