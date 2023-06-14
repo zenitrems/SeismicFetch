@@ -146,14 +146,13 @@
 
       ("{%for evento in eventos%}");
       var row = [
-        "{{evento.fecha}}" + ", " + "{{evento.hora}}",
-        "{{evento.magnitud}}",
-        "{{evento.latitud}}",
-        "{{evento.longitud}}",
+        "{{evento.time}}",
+        "{{evento.mag}}",
+        "{{evento.lat}}",
+        "{{evento.lon}}",
       ];
       tableData.push(row);
       ("{%endfor%}");
-
       const grid = new gridjs.Grid({
         columns: [
           {
@@ -165,7 +164,7 @@
             formatter: (cell) => {
               const color = getMagColor(cell);
               return gridjs.html(
-                `<span style="font-size: 18px; font-type: bold;color: ${color}">${cell}</span>`
+                `<span style="font-size: 18px; color: ${color}">${cell}</span>`
               );
             },
             attributes: (cell) => {
