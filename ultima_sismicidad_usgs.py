@@ -18,7 +18,7 @@ collection_name = mongo_db["sismicidad_usgs"]
 
 token = os.getenv('TELEGRAM_KEY')
 bot = MyBot(token)
-
+#USG_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"
 USG_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson"
 
 
@@ -38,6 +38,7 @@ async def procesar_datos(data):
     """Procesa datos"""
     document_data = []
     utc_timezone = pytz.timezone('UTC')
+    mexico_timezone = pytz.timezone('America/Mexico_City')
 
     for feature in data['features']:
         feature_properties = feature['properties']
@@ -48,11 +49,11 @@ async def procesar_datos(data):
         time_usgs = feature_properties['time'] / 1000
         time_updated = feature_properties['time'] / 1000
 
-        timestamp = datetime.datetime.fromtimestamp(time_usgs, tz=utc_timezone)
+        timestamp = datetime.datetime.fromtimestamp(
+            time_usgs, tz=utc_timezone)
         updated = datetime.datetime.fromtimestamp(
             time_updated, tz=utc_timezone)
-        timestamp_local = timestamp.replace(tzinfo=utc_timezone).astimezone(
-            pytz.timezone('America/Mexico_City'))
+        timestamp_local = timestamp.replace(tzinfo=utc_timezone).astimezone(tz=mexico_timezone).isoformat()
 
         # https://earthquake.usgs.gov/data/comcat/data-eventterms.php
         properties = {
