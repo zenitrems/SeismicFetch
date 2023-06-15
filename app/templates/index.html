@@ -167,22 +167,29 @@
                 `<span style="font-size: 18px; color: ${color}">${cell}</span>`
               );
             },
-            attributes: (cell) => {
-              // add these attributes to the td elements only
+            attributes: (cell, row) => {
               if (cell) {
-                const color = getMagColor(cell);
                 return {
-                  "data-cell-content": cell,
-                  onclick: () => centerMap(row[2], row[3]),
+                  onclick: () =>
+                    centerMap(row._cells[2].data, row._cells[3].data),
                   style: "cursor: pointer",
                 };
               }
             },
           },
+          {
+            name: "lat",
+            hidden: true,
+          },
+          {
+            name: "lon",
+            hidden: true,
+          },
         ],
         style: {
           table: {
             "text-align": "center",
+            "white-space": "nowrap",
           },
           th: {
             "font-size": "13px",
@@ -220,12 +227,16 @@
       const container = document.getElementById("map-iframe");
       container.appendChild(iframe);
 
-      // Función para centrar el mapa en las coordenadas especificadas
       function centerMap(lat, lon) {
-        iframe.contentWindow.postMessage(
-          { type: "center", lat: lat, lon: lon },
-          "*"
-        );
+        // Get the 'window' object of the iFrame
+        const mapWindow = iframe.contentWindow;
+        console.log(mapWindow);
+        let keys = Object.keys(mapWindow);
+        // Folium seems to generate a random code for the map object, so I just
+        // looked for a property of the window object starting with 'map_'
+        let mapObjKey = keys.filter((name) => name.startsWith("map_"))[0];
+        const mapObj = mapWindow[mapObjKey];
+        mapObj.flyTo([lat, lon], 6);
       }
     </script>
   </body>

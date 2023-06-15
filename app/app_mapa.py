@@ -17,13 +17,13 @@ from get_mongo_db import mongodb
 load_dotenv()
 app = Flask(__name__)
 DATABASE = mongodb()
-
-mexico_bounds = [[14.5, -120.9], [32.7, -85]]
-mexico_center = [19.4, -99.1]
+MEXICO_BOUNDS = [[14.5, -120.9], [32.7, -85]]
+MEXICO_CENTER = [19.4, -99.1]
 SSN_REF = '<a href=\"http://www.ssn.unam.mx/\">Servicio Sismógico Nacional</a>'
 UNAM_REF = '<a href=\"https://www.unam.mx/\">UNAM</a>'
+USGS_REF = '<a href=\"https://www.usgs.gov//\">USGS</a>'
 NORDPIL_REF = '<a href=\"https://nordpil.com/\">Nordpil</a>'
-MAP_ATRIBUTION = f"{SSN_REF} | {UNAM_REF} | USGS | {NORDPIL_REF}"
+MAP_ATRIBUTION = f"{SSN_REF} | {UNAM_REF} | {USGS_REF} | {NORDPIL_REF}"
 MAP_TILE = os.getenv('MAP_TILE')
 
 MAPBOX_LAYER = folium.TileLayer(
@@ -31,6 +31,7 @@ MAPBOX_LAYER = folium.TileLayer(
     attr=MAP_ATRIBUTION,
     name="Mapbox",
     min_zoom=3,
+    max_zoom=18,
     control=False
 )
 
@@ -39,7 +40,7 @@ def style_function(features):
     """style function for GeoJson"""
     return {
         'color': 'red',  # Color de la línea
-        'weight': 1,     # Grosor de la línea
+        'weight': 0.9,     # Grosor de la línea
         'fillColor': 'yellow',  # Color de relleno
         'fillOpacity': 0.5  # Opacidad del relleno
     }
@@ -94,10 +95,12 @@ def draw_points(ssn_list, usgs_list):
     """Marker Maker for points"""
     mapa = folium.Map(
         tiles=MAPBOX_LAYER,
-        location=mexico_center,
+        location=MEXICO_CENTER,
         zoom_start=4,
         zoom_control=False,
         control_scale=True,
+        world_copy_jump=True,
+        no_wrap=False
     )
 
     grupos = [
@@ -111,7 +114,8 @@ def draw_points(ssn_list, usgs_list):
                 'mag': ['mag'],
                 'depth': ['depth'],
                 'time': ['time'],
-                'local_time': ['local_time']
+                'local_time': ['local_time'],
+                'agency': ['agency']
             }
         },
         {
@@ -124,7 +128,8 @@ def draw_points(ssn_list, usgs_list):
                 'ref': ['ref'],
                 'mag': ['mag'],
                 'time': ['time'],
-                'local_time': ['local_time']
+                'local_time': ['local_time'],
+                'agency': ['agency']
             }
         }
     ]
@@ -154,10 +159,21 @@ def draw_points(ssn_list, usgs_list):
                 )
             )
 
+            popup_content = f"""
+            <div style="font-size: 11px;">
+               <strong style="color: red;">{get_nested_value(point, header_mapping['agency'])}</strong></br>
+               <strong>{get_nested_value(point, header_mapping['ref'])}</strong></br>
+               <strong style="color:{get_marker_color(get_nested_value(point, header_mapping['mag']))}">M {get_nested_value(point, header_mapping['mag'])}</strong></br>
+               <span>Profundidad: {get_nested_value(point, header_mapping['depth'])} Km</span><br>
+               <span>{get_nested_value(point, header_mapping['time'])} UTC</span></br>
+               <span>{get_nested_value(point, header_mapping['local_time'])} UTC-6</span>
+            </div>
+           """
+
             if group_name == 'SSN' and get_nested_value(point, header_mapping['time']) == ultimo_evento_ssn:
                 # Aplicar estilo especial al marcador del último sismo de SSN
                 sismo_marker.add_child(folium.Popup(
-                    'Último sismo SSN', max_width=100, show=True))
+                    popup_content, max_width=600, show=True))
 
             elif group_name == 'USGS' and get_nested_value(point, header_mapping['time']) == ultimo_evento_usgs:
                 # Aplicar estilo especial al marcador del último sismo de USGS
@@ -178,29 +194,8 @@ def draw_points(ssn_list, usgs_list):
 
         marker_group.add_to(mapa)
 
-    listener_script = """
-    <script>
-        window.addEventListener('message', function (event) {
-          if (event.data.type === 'center') {
-            var lat = event.data.lat;
-            var lon = event.data.lon;
-            parent.postMessage({ type: 'center', lat: lat, lon: lon }, '*');
-            console.log(lat, lon)
-            var mapElement = document.querySelector('.folium-map');
-            if (mapElement) {
-              var mapObject = mapElement._leaflet_map;
-              document.addEventListener('DOMContentLoaded', function() {
-                var bounds = L.latLngBounds([[lat, lon], [lat, lon]]);
-                mapObject.fitBounds(bounds);
-              });
-            }
-          }
-        });
-    </script>
-    """
-
-    mapa.get_root().html.add_child(folium.Element(listener_script))
     tectonic_boundaries.add_to(mapa)
+    mapa.fit_bounds(MEXICO_BOUNDS)
     folium.LayerControl(position="bottomright").add_to(mapa)
     # Guardar el mapa en un archivo HTML
     mapa.save('static/mapa.html')
@@ -220,7 +215,8 @@ def data_format(ssn_list, usgs_list, ssn_data_simplify, usgs_data_simplify):
             'ref': item['referencia'],
             'mag': item['magnitud'],
             'time': item['timestamp_utc'],
-            'local_time': timestamp_local
+            'local_time': timestamp_local,
+            'agency': "SSN"
         }
         ssn_data_simplify.append(document)
 
@@ -237,7 +233,8 @@ def data_format(ssn_list, usgs_list, ssn_data_simplify, usgs_data_simplify):
             'ref': item['properties']['place'],
             'mag': item['properties']['mag'],
             'time': time_str,
-            'local_time': local_time_str
+            'local_time': local_time_str,
+            'agency': "SSN"
         }
         usgs_data_simplify.append(document)
     return ssn_data_simplify, usgs_data_simplify
@@ -250,7 +247,7 @@ def index(start_date=None):
 
     # Establecer fecha actual si no se encontro solicitud de fecha
     if start_date is None:
-        start_date = datetime.now(utc_timezone) - timedelta(hours=24)
+        start_date = datetime.now(utc_timezone) - timedelta(hours=12)
 
     # Mongo
     try:
@@ -280,7 +277,8 @@ def index(start_date=None):
     usgs_data_simplify = []
     data_format(ssn_list, usgs_list, ssn_data_simplify, usgs_data_simplify)
     draw_points(ssn_data_simplify, usgs_data_simplify)
-    return render_template('index.html', eventos=ssn_data_simplify)
+    simplify_list = ssn_data_simplify + usgs_data_simplify
+    return render_template('index.html', eventos=simplify_list)
 
 
 # Search Start date
@@ -319,11 +317,12 @@ def heatmap():
     """Draw Heatmap"""
     mapa = folium.Map(
         tiles=MAPBOX_LAYER,
-        location=mexico_center,
+        location=MEXICO_CENTER,
         zoom_start=4,
         zoom_control=False,
         control_scale=True,
     )
+
     try:
         collection_name = DATABASE["magAggregate"]
         data_collection = list(collection_name.find())
@@ -352,6 +351,8 @@ def heatmap():
         )
         heat.add_to(mapa)
     tectonic_boundaries.add_to(mapa)
+    mapa.fit_bounds(MEXICO_BOUNDS)
+    folium.LayerControl(position="bottomright").add_to(mapa)
     mapa.save('static/mapa.html')
     return render_template('index.html')
 
