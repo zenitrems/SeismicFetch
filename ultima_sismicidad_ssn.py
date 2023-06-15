@@ -39,9 +39,12 @@ async def consultar_ssn():
         else:
             print(colored(
                 f"Error consultando SSN\n {response.status_code}", "red", attrs=["reverse"], ),)
-    except requests.Timeout as request_error:
+    except requests.Timeout as request_timeout:
         print(colored("Request Timeout: \n",
-                      "red", attrs=["reverse"]), str(request_error))
+                      "red", attrs=["reverse"]), str(request_timeout))
+    except requests.ConnectionError as request_conection_error:
+        print(colored("Request Timeout: \n",
+                      "red", attrs=["reverse"]), str(request_conection_error))
 
 
 async def buscar_datos(response):

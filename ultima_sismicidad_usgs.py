@@ -4,6 +4,7 @@ Usgs
 import os
 import asyncio
 import datetime
+import time
 import pytz
 import requests
 from termcolor import colored
@@ -18,20 +19,31 @@ collection_name = mongo_db["sismicidad_usgs"]
 
 token = os.getenv('TELEGRAM_KEY')
 bot = MyBot(token)
-#USG_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"
-USG_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson"
+# USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"
+USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson"
 
 
 async def consulta_usgs():
-    """Feed update last hour"""
+    """Peticion de datos"""
+    start = time.perf_counter()
     try:
         response = requests.get(
-            USG_FEED, timeout=60)
+            USGS_FEED, timeout=60)
         if response.status_code == 200:
+            finish = time.perf_counter()
+            print(colored(f"\nusgs consultado en {finish - start:0.4f} segundos",
+                          "yellow"))
             data = response.json()
             await procesar_datos(data)
-    except requests.Timeout as request_error:
-        print("request error", str(request_error))
+        else:
+            print(colored(
+                f"Error consultando SSN\n {response.status_code}", "red", attrs=["reverse"], ),)
+    except requests.Timeout as request_timeout:
+        print(colored("Request Timeout: \n",
+                      "red", attrs=["reverse"]), str(request_timeout))
+    except requests.ConnectionError as request_conection_error:
+        print(colored("Request Timeout: \n",
+                      "red", attrs=["reverse"]), str(request_conection_error))
 
 
 async def procesar_datos(data):
@@ -53,7 +65,8 @@ async def procesar_datos(data):
             time_usgs, tz=utc_timezone)
         updated = datetime.datetime.fromtimestamp(
             time_updated, tz=utc_timezone)
-        timestamp_local = timestamp.replace(tzinfo=utc_timezone).astimezone(tz=mexico_timezone).isoformat()
+        timestamp_local = timestamp.replace(
+            tzinfo=utc_timezone).astimezone(tz=mexico_timezone).isoformat()
 
         # https://earthquake.usgs.gov/data/comcat/data-eventterms.php
         properties = {
