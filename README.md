@@ -12,15 +12,7 @@ USGS proporciona un feed en geojson https://earthquake.usgs.gov/earthquakes/feed
 - mejor manejo de errores
 - crear sistema de logging
 - validacion de datos
-- rehacer la lista de eventos en el mapa / LISTO
-- filtrar eventos en el mapa / LISTO
-- placas tectonicas en el mapa / LISTO
 - continuar con seedlinkclient
-- ultimo evento mostrado en mapa / LISTO
 - mongo pipelines para magnitud y otros
 
 ## Bugs conocidos:
-
-- ssn no divide magnitud y PRELIMINAR cuando se detecta PRELIMINAR
-
-  IndexError: list index out of range

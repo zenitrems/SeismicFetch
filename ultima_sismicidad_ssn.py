@@ -74,7 +74,7 @@ async def acomodar_datos(rows):
         epi_span_texts = [span.text for span in epi_span_tags]
         datetime_span_tags = cells[1].find_all('span')
         datetime_span_texts = [span.text for span in datetime_span_tags]
-        magnitud_text = cells[0].text.split(' ')[0]
+        magnitud_text = cells[0].text
 
         fecha_hora_str = f"{datetime_span_texts[0].strip()} {datetime_span_texts[1].strip()}"
         fecha_hora = datetime.strptime(fecha_hora_str, '%Y-%m-%d %H:%M:%S')
