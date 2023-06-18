@@ -6,7 +6,7 @@ from pymongo.errors import PyMongoError
 from get_mongo_db import mongodb
 
 mongo = mongodb()
-mongo_db = mongo['sismos']
+mongo_db = mongo['sismicidad_ssn']
 
 
 def update_last_week_data():
@@ -20,12 +20,12 @@ def update_last_week_data():
         pipeline = [
             {
                 '$match': {
-                    'fecha': {
-                        '$gte': last_week_str
+                    'magnitud': {
+                        '$gte': 7
                     }
                 }
             }, {
-                '$out': 'ultimos_sismos'
+                '$out': 'magAggregate'
             }
         ]
         mongo_db['sismos'].aggregate(pipeline)

@@ -1,14 +1,46 @@
+"""
+Using iris seedlink server
+rtserve.iris.washington.edu
+MEXICO STATIONS:
+    NETWORK: UI
+        STATION: TEIG
+            TEPICH YUCATAN MEXICO
+        STATION: SLBS
+            SIERRA LA LAGUNA BAJA CALIFORNIA SUR
+    
+    NETWORK: MX
+        STATION: CCIG
+            COMITAN CHIAPAS
+        STATION: TLIG
+            TLAPA GUERRERO
+        STATION: MOIG
+            MORELIA MICHOACAN
+        STATION: ZAIG
+            ZACATECAS
+        STATION: HPIG
+            HIDALGO DEL PARRAL CHIHUAHUA
+        STATION: HSIG
+            HERMOSILLO SONORA
+        STATION: SRIG
+            SANTA ROSALIA BAJA CALIFORNIA SUR
+        STATION: SPIG
+            SAN PEDRO MARTIR BAJA CALIFORNIA NORTE
+        STATION: MBIG
+            MEXICALI BAJA CALIFORNIA NORTE
+        STATION: TJIC
+            TIJUANA BAJA CALIFORNIA NORTE
+"""
+import tkinter as tk
+import threading
 from obspy.clients.seedlink.easyseedlink import EasySeedLinkClient
 from obspy.signal.filter import bandpass
 import numpy as np
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import tkinter as tk
-import threading
 
-bhe_data = []
-bhn_data = []
-bhz_data = []
+BHE_DATA = []
+BHN_DATA = []
+BHZ_DATA = []
 
 
 class SeedClient(EasySeedLinkClient):
@@ -88,7 +120,7 @@ class SeedClient(EasySeedLinkClient):
     # On SeedClient data do
 
     def on_data(self, trace):
-        global bhe_data, bhn_data, bhz_data
+        global BHE_DATA, BHN_DATA, BHZ_DATA
         print(trace)
         data = trace.data
         starttime = trace.stats.starttime
@@ -102,19 +134,19 @@ class SeedClient(EasySeedLinkClient):
             self.initialize_window()
 
         if trace.stats.channel == 'BHE':
-            bhe_data = list(bhe_data)
+            bhe_data = list(BHE_DATA)
             bhe_data.extend(data)
             bhe_data = bandpass(data=bhe_data, freqmin=freq_min,
                                 freqmax=freq_max, df=sampling_rate, corners=orden)
 
         if trace.stats.channel == 'BHN':
-            bhn_data = list(bhn_data)
+            bhn_data = list(BHN_DATA)
             bhn_data.extend(data)
             bhn_data = bandpass(data=bhn_data, freqmin=freq_min,
                                 freqmax=freq_max, df=sampling_rate, corners=orden)
 
         if trace.stats.channel == 'BHZ':
-            bhz_data = list(bhz_data)
+            bhz_data = list(BHZ_DATA)
             bhz_data.extend(data)
             bhz_data = bandpass(data=bhz_data, freqmin=freq_min,
                                 freqmax=freq_max, df=sampling_rate, corners=orden)
@@ -145,13 +177,6 @@ def run_client():
     client.select_stream('MX', 'TLIG', selector='BHN')
     client.select_stream('MX', 'TLIG', selector='BHZ')
 
-    """ client.select_stream('MX', 'CCIG', selector='BHE')
-    client.select_stream('MX', 'HPIG', selector='BHE')
-    client.select_stream('MX', 'HSTG', selector='BHE')
-    client.select_stream('MX', 'MOIG', selector='BHE')
-    client.select_stream('MX', 'SRIG', selector='BHE')
-    client.select_stream('MX', 'TLIG', selector='BHE')
-    client.select_stream('MX', 'ZAIG', selector='BHE') """
 
     try:
         client.run()
