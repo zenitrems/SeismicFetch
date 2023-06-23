@@ -53,7 +53,7 @@ class SeedClient(EasySeedLinkClient):
 
     def initialize_window(self):
         self.root = tk.Tk()
-        self.root.title('Waveform')
+        self.root.title("Waveform")
 
         self.fig = plt.Figure(figsize=(8, 6))
         self.ax = self.fig.add_subplot(111)
@@ -75,43 +75,56 @@ class SeedClient(EasySeedLinkClient):
         for i, (t, bhe) in enumerate(zip(times, bhe_data)):
             offset = i * spacing
             try:
-                ax_bhe.plot([t], [bhe + offset], color='blue',
-                            linestyle='-', marker='o')
+                ax_bhe.plot(
+                    [t], [bhe + offset], color="blue", linestyle="-", marker="o"
+                )
                 ax_bhe.fill_betweenx(
-                    [bhe + offset - amplitude, bhe + offset + amplitude], [t], [t], color='black')
+                    [bhe + offset - amplitude, bhe + offset + amplitude],
+                    [t],
+                    [t],
+                    color="black",
+                )
             except (ValueError, TypeError):
                 pass
-        ax_bhe.set_ylabel('BHE Offset')
-        ax_bhe.set_title('Waveform - BHE')
+        ax_bhe.set_ylabel("BHE Offset")
+        ax_bhe.set_title("Waveform - BHE")
 
         # Canal BHN
         ax_bhn = self.fig.add_subplot(312)
         for i, (t, bhn) in enumerate(zip(times, bhn_data)):
             offset = i * spacing
             try:
-                ax_bhn.plot([t], [bhn + offset], color='green',
-                            linestyle='-', marker='o')
+                ax_bhn.plot(
+                    [t], [bhn + offset], color="green", linestyle="-", marker="o"
+                )
                 ax_bhn.fill_betweenx(
-                    [bhn + offset - amplitude, bhn + offset + amplitude], [t], [t], color='black')
+                    [bhn + offset - amplitude, bhn + offset + amplitude],
+                    [t],
+                    [t],
+                    color="black",
+                )
             except (ValueError, TypeError):
                 pass
-        ax_bhn.set_ylabel('BHN Offset')
-        ax_bhn.set_title('Waveform - BHN')
+        ax_bhn.set_ylabel("BHN Offset")
+        ax_bhn.set_title("Waveform - BHN")
 
         # Canal BHZ
         ax_bhz = self.fig.add_subplot(313)
         for i, (t, bhz) in enumerate(zip(times, bhz_data)):
             offset = i * spacing
             try:
-                ax_bhz.plot([t], [bhz + offset], color='red',
-                            linestyle='-', marker='o')
+                ax_bhz.plot([t], [bhz + offset], color="red", linestyle="-", marker="o")
                 ax_bhz.fill_betweenx(
-                    [bhz + offset - amplitude, bhz + offset + amplitude], [t], [t], color='black')
+                    [bhz + offset - amplitude, bhz + offset + amplitude],
+                    [t],
+                    [t],
+                    color="black",
+                )
             except (ValueError, TypeError):
                 pass
-        ax_bhz.set_xlabel('Time')
-        ax_bhz.set_ylabel('BHZ Offset')
-        ax_bhz.set_title('Waveform - BHZ')
+        ax_bhz.set_xlabel("Time")
+        ax_bhz.set_ylabel("BHZ Offset")
+        ax_bhz.set_title("Waveform - BHZ")
 
         self.fig.tight_layout()
         self.canvas.draw()
@@ -133,31 +146,45 @@ class SeedClient(EasySeedLinkClient):
         if self.root is None:
             self.initialize_window()
 
-        if trace.stats.channel == 'BHE':
+        if trace.stats.channel == "BHE":
             bhe_data = list(BHE_DATA)
             bhe_data.extend(data)
-            bhe_data = bandpass(data=bhe_data, freqmin=freq_min,
-                                freqmax=freq_max, df=sampling_rate, corners=orden)
+            bhe_data = bandpass(
+                data=bhe_data,
+                freqmin=freq_min,
+                freqmax=freq_max,
+                df=sampling_rate,
+                corners=orden,
+            )
 
-        if trace.stats.channel == 'BHN':
+        if trace.stats.channel == "BHN":
             bhn_data = list(BHN_DATA)
             bhn_data.extend(data)
-            bhn_data = bandpass(data=bhn_data, freqmin=freq_min,
-                                freqmax=freq_max, df=sampling_rate, corners=orden)
+            bhn_data = bandpass(
+                data=bhn_data,
+                freqmin=freq_min,
+                freqmax=freq_max,
+                df=sampling_rate,
+                corners=orden,
+            )
 
-        if trace.stats.channel == 'BHZ':
+        if trace.stats.channel == "BHZ":
             bhz_data = list(BHZ_DATA)
             bhz_data.extend(data)
-            bhz_data = bandpass(data=bhz_data, freqmin=freq_min,
-                                freqmax=freq_max, df=sampling_rate, corners=orden)
+            bhz_data = bandpass(
+                data=bhz_data,
+                freqmin=freq_min,
+                freqmax=freq_max,
+                df=sampling_rate,
+                corners=orden,
+            )
 
         max_samples = int(2000 * sampling_rate)
         bhe_data = bhe_data[-max_samples:]
         bhn_data = bhn_data[-max_samples:]
         bhz_data = bhz_data[-max_samples:]
 
-        self.update_waveform(bhe_data, bhn_data, bhz_data,
-                             starttime, sampling_rate)
+        self.update_waveform(bhe_data, bhn_data, bhz_data, starttime, sampling_rate)
 
     def on_seedlink_error(self):
         print("Error occurred")
@@ -171,12 +198,11 @@ class SeedClient(EasySeedLinkClient):
 
 
 def run_client():
-    client = SeedClient('rtserve.iris.washington.edu:18000')
+    client = SeedClient("rtserve.iris.washington.edu:18000")
     # TLIG STATION TLAPA GUERRERO
-    client.select_stream('MX', 'TLIG', selector='BHE')
-    client.select_stream('MX', 'TLIG', selector='BHN')
-    client.select_stream('MX', 'TLIG', selector='BHZ')
-
+    client.select_stream("MX", "TLIG", selector="BHE")
+    client.select_stream("MX", "TLIG", selector="BHN")
+    client.select_stream("MX", "TLIG", selector="BHZ")
 
     try:
         client.run()
