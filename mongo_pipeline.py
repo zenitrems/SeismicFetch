@@ -7,6 +7,7 @@ from get_mongo_db import mongodb
 
 mongo = mongodb()
 usgs_collection = mongo["sismicidad_usgs"]
+ssn_collection = mongo["sismicidad_ssn"]
 
 
 def update_last_week_data():
@@ -14,7 +15,9 @@ def update_last_week_data():
     try:
         pipeline = [{"$sort": {"properties.time": -1}}]
 
-        results = usgs_collection.aggregate(pipeline)
+        match_mag = [{"$match": {"magnitud": {"$gte": 7}}}]
+
+        results = ssn_collection.aggregate(match_mag)
 
         for event in results:
             print(event)
