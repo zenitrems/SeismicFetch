@@ -13,6 +13,6 @@ USGS proporciona un feed en geojson https://earthquake.usgs.gov/earthquakes/feed
 - crear sistema de logging
 - validacion de datos
 - continuar con seedlinkclient
-- mongo pipelines para magnitud y otros
+- emsc websocket feed
 
 ## Bugs conocidos:
