@@ -22,6 +22,7 @@ token = os.getenv("TELEGRAM_KEY")
 bot = MyBot(token)
 # USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"
 USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson"
+#USGS_FEED = "https://earthquake.usgs.gov/fdsnws/event/1/query.geojson?starttime=2023-01-01%2000:00:00&endtime=2023-06-23%2023:59:59&minmagnitude=2.5&orderby=time-asc"
 
 
 async def consulta_usgs():
