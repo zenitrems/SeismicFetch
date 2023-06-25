@@ -19,6 +19,7 @@ from telegram_bot import MyBot
 
 load_dotenv()
 
+
 token = os.getenv("TELEGRAM_KEY")
 bot = MyBot(token)
 dbname = mongodb()
@@ -98,13 +99,15 @@ async def acomodar_datos(rows):
             f"{datetime_span_texts[0].strip()} {datetime_span_texts[1].strip()}"
         )
         fecha_hora = datetime.strptime(fecha_hora_str, "%Y-%m-%d %H:%M:%S")
-        utc_timestamp = fecha_hora.replace(
-            tzinfo=pytz.timezone("America/Mexico_city")
-        ).astimezone(pytz.timezone("UTC"))
+        fecha_hora_timezone = datetime.replace(
+            fecha_hora, tzinfo=pytz.timezone("America/Mexico_City")
+        )
+
+        utc_timestamp = fecha_hora_timezone.astimezone(pytz.timezone("UTC"))
 
         magnitud_parts = magnitud_text.split(" ")
         is_preliminar = (
-            magnitud_parts[1] if magnitud_parts[0] == "PRELIMINAR" else False
+            magnitud_parts[0] if magnitud_parts[0] == "PRELIMINAR" else False
         )
         magnitud = (
             float(magnitud_parts[1]) if is_preliminar else float(magnitud_parts[0])
@@ -130,7 +133,7 @@ async def buscar_existentes(datos_nuevos):
     """busca datos existentes"""
     try:
         datos_existentes = []
-        oneday = datetime.now() - timedelta(days=3)
+        oneday = datetime.now() - timedelta(days=4)
         oneday_str = oneday.strftime("%Y-%m-%d")
         datos_existentes = list(collection_name.find({"fecha": {"$gte": oneday_str}}))
 
