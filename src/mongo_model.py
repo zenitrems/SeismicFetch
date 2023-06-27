@@ -1,9 +1,13 @@
 """
 Mongo data Model
 """
+from datetime import datetime, timedelta
+import pytz
 from pymongo.errors import PyMongoError
 from get_mongo_db import mongodb
 
+UTC_TIMEZONE = pytz.timezone("UTC")
+AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
 
 db = mongodb()
 
@@ -14,6 +18,7 @@ class MongoModel:
     def __init__(self) -> None:
         self.emsc_collection = db["sismicidad_emsc"]
         self.usgs_collection = db["sismicidad_usgs"]
+        self.start_date = datetime.now(UTC_TIMEZONE) - timedelta(hours=24)
 
     def insert_emsc(self, event):
         """Insert event to EMSC DB"""
@@ -24,13 +29,20 @@ class MongoModel:
             print("MongoDB error", str(mongo_error))
 
     def get_emsc_ids(self):
-        """Compare recent EMSC id's"""
+        """Get latest EMSC event id's"""
         try:
-            id_collection = list(self.emsc_collection.find())
+            emsc_id_list = list(
+                self.emsc_collection.aggregate(
+                    [
+                        {"$match": {"properties.time": {"$gt": self.start_date}}},
+                        {"$project": {"id": 1}},
+                    ]
+                )
+            )
         except PyMongoError as mongo_error:
             print("MongoDB error", str(mongo_error))
 
-        return id_collection
+        return emsc_id_list
 
     def insert_usgs(self, event):
         """Insert event to USGS DB"""
@@ -41,10 +53,17 @@ class MongoModel:
             print("MongoDB error", str(mongo_error))
 
     def get_usgs_ids(self):
-        """Compare recent USGS id's"""
+        """Get latest USGS event id's"""
         try:
-            id_collection = list(self.usgs_collection.find())
+            usgs_id_list = list(
+                self.usgs_collection.aggregate(
+                    [
+                        {"$match": {"properties.time": {"$gt": self.start_date}}},
+                        {"$project": {"usgs_id": 1}},
+                    ]
+                )
+            )
         except PyMongoError as mongo_error:
             print("MongoDB error", str(mongo_error))
 
-        return id_collection
+        return usgs_id_list

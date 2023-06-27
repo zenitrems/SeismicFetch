@@ -1,17 +1,18 @@
+# pylint: disable=broad-exception-caught
 """
 Feeder utilities
 """
 
 import sys
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 from mongo_model import MongoModel
-from telegram_bot import MyBot
-
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
+
+start_date = datetime.now(UTC_TIMEZONE) - timedelta(hours=24)
 
 db_action = MongoModel()
 
@@ -64,15 +65,18 @@ class EmscUtils:
             }
             self.save_data(document)
 
-        except Exception as e:
-            print("except", str(e))
+        except Exception:
+            print(str(Exception))
 
-    def compare_id(self, data):
+    def compare_id(
+        self,
+    ):
         """Compare existent id's"""
-        existent_collection = []
+        db_action.get_usgs_ids()
 
     def save_data(self, data):
         """MongoDB save"""
+        self.compare_id()
         db_action.insert_emsc(data)
 
 
@@ -173,8 +177,24 @@ class UsgsUtils:
                 }
                 document_data.append(document)
 
-        except Exception as e:
-            print("exception", str(e))
+            self.compare_id(document_data)
 
-    def compare_id(self, id):
+        except Exception:
+            print(str(Exception))
+
+    def compare_id(self, data):
+        """Compare new id whith exitent id to avoid duplicates"""
         id_collection = db_action.get_usgs_ids()
+        new_events = []
+        existent_id = [dato["usgs_id"] for dato in id_collection]
+        for element in data:
+            new_id = element["id"]
+            if new_id in existent_id:
+                print(f"El dato con ID {new_id} ya existe")
+                return
+            print(f"El dato con ID {new_id} Es Nuevo")
+            new_events.append(element)
+
+        print(new_events)
+
+    # def save_event(self, new_events):
