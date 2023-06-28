@@ -22,7 +22,7 @@ class UsgsDbActions:
     def insert_usgs(self, event):
         """Insert event to USGS DB"""
         try:
-            self.usgs_collection.insert_many(event)
+            self.usgs_collection.insert_one(event)
 
         except PyMongoError as mongo_error:
             print("MongoDB error", str(mongo_error))
