@@ -2,9 +2,7 @@
 """
 Feeder utilities
 """
-
 import sys
-import logging
 from datetime import datetime
 from loguru import logger
 import pytz
@@ -12,11 +10,12 @@ from mongo_model import UsgsDbActions, EmscDbActions
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
-
-
-logging.basicConfig(
-    stream=sys.stdout,
-    level=logging.INFO,
+logger.remove()
+logger.add(
+    sink=sys.stdout,
+    colorize=True,
+    format="[{time:HH:mm:ss}] | <lvl>{level}</lvl> | {name}:{function} | <b>{message}{exception}</b>",
+    level="DEBUG",
 )
 
 
@@ -126,7 +125,6 @@ class UsgsUtils:
 
     def compare_id(self, data):
         """Compare ids and save new events"""
-        new_events = []
         id_collection = self.db_action.get_usgs_ids()
         existing_id = [element["id"] for element in id_collection]
         for element in data:
@@ -134,9 +132,15 @@ class UsgsUtils:
             if new_id in existing_id:
                 logger.info(f"{new_id} Exists")
                 return
-            logger.info(f"{new_id} Is new")
-            new_events.append(element)
-        self.db_action.insert_usgs(new_events)
+            self.db_action.insert_usgs(element)
+            logger.info(
+                "New Event: {place} M{mag} T0:{time} {net} ID:{id}  ",
+                place=element["properties"]["place"],
+                mag=element["properties"]["mag"],
+                time=element["properties"]["time"],
+                net=element["properties"]["sources"],
+                id=element["id"],
+            )
 
 
 class EmscUtils:
@@ -194,8 +198,23 @@ class EmscUtils:
         new_id = document["id"]
         existing_id = self.db_action.find_emsc_id(new_id)
         if existing_id is True:
-            logger.info(f"{new_id} Exists")
             self.db_action.update_document(document)
+            logger.info(
+                "Event Updated: {place} time:{time} Update:{update} {net} ID:{id} ",
+                place=document["properties"]["place"],
+                time=document["properties"]["time"],
+                update=document["properties"]["lastupdate"],
+                net=document["properties"]["auth"],
+                id=document["id"],
+            )
             return
-        logger.info(f"{new_id} Is new")
+
         self.db_action.insert_emsc(document)
+        logger.info(
+            "New Event: {place} M{mag} T0:{time} {net} ID:{id}",
+            place=document["properties"]["place"],
+            mag=document["properties"]["mag"],
+            time=document["properties"]["time"],
+            net=document["properties"]["auth"],
+            id=document["id"],
+        )
