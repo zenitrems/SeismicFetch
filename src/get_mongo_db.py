@@ -2,19 +2,19 @@
 Mongo Client
 """
 from pymongo import MongoClient, monitoring
-
+from loguru import logger
 
 class CustomCommandLogger(monitoring.CommandListener):
     """Custom"""
 
     def started(self, event):
-        print(f"Comando MongoDB iniciado: {event.command_name}")
+        logger.info(f"{event.command_name} Start")
 
     def succeeded(self, event):
-        print(f"Comando MongoDB exitoso: {event.command_name}")
+        logger.success(f"{event.command_name} Succeeded")
 
     def failed(self, event):
-        print(f"Comando MongoDB fallido: {event.command_name}")
+        logger.error(f"{event.command_name} Failed")
 
 
 # Configura el logger personalizado
