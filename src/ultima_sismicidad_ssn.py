@@ -107,7 +107,7 @@ async def acomodar_datos(rows):
 
         magnitud_parts = magnitud_text.split(" ")
         is_preliminar = (
-            magnitud_parts[0] if magnitud_parts[0] == "PRELIMINAR" else False
+            True if magnitud_parts[0] == "PRELIMINAR" else False
         )
         magnitud = (
             float(magnitud_parts[1]) if is_preliminar else float(magnitud_parts[0])
