@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from loguru import logger
 import pytz
-from mongo_model import UsgsDbActions, EmscDbActions
+from mongo_model import UsgsDbActions, EmscDbActions, SsnDbActions
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
@@ -118,8 +118,6 @@ class UsgsUtils:
                     document_data.append(document)
 
                 self.compare_id(document_data)
-
-            logger.info("No new features found")
         except Exception:
             logger.exception(Exception)
 
@@ -226,3 +224,36 @@ class EmscUtils:
             net=document["properties"]["auth"],
             id=document["id"],
         )
+
+
+class SsnUtils:
+    """SSN Data Utils"""
+
+    def __init__(self) -> None:
+        self.db_action = SsnDbActions()
+
+    def compare_data(self, data):
+        """Compara los datos nuevos con los existentes"""
+        # List Dates in existing data
+        existing_data = self.db_action.get_event_list()
+        existing_datetimes = set()
+        for element in existing_data:
+            time_date = datetime.strptime(
+                element["fecha"] + " " + element["hora"], "%Y-%m-%d %H:%M:%S"
+            )
+            existing_datetimes.add(time_date)
+
+        # Filter and save
+        for element in data:
+            new_datetime = datetime.strptime(
+                element["fecha"] + " " + element["hora"], "%Y-%m-%d %H:%M:%S"
+            )
+            if new_datetime not in existing_datetimes:
+                self.db_action.insert_ssn(element)
+                logger.info(
+                    "New Event: {place} | M{mag} | T0:{time} \nNetwork:{net}",
+                    place=element["referencia"],
+                    mag=element["magnitud"],
+                    time=element["timestamp_utc"],
+                    net="SSN",
+                )
