@@ -9,10 +9,7 @@ USGS proporciona un feed en geojson https://earthquake.usgs.gov/earthquakes/feed
 ## Todo:
 
 - pruebas unitarias
-- mejor manejo de errores
-- crear sistema de logging
 - validacion de datos
 - continuar con seedlinkclient
-- emsc websocket feed
 
 ## Bugs conocidos:
