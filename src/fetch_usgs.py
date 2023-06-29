@@ -1,0 +1,37 @@
+"""
+Fetch USGS geojson feed
+"""
+import time
+import requests
+from dotenv import load_dotenv
+from helpers import UsgsUtils, logger
+
+
+load_dotenv()
+
+usgs_utils = UsgsUtils()
+
+# USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"
+USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson"
+# USGS_FEED = "https://earthquake.usgs.gov/fdsnws/event/1/query.geojson?starttime=2023-01-01%2000:00:00&endtime=2023-06-27%2023:59:59&minmagnitude=2.5&orderby=time-asc"
+
+SLEEP_SECONDS = 60
+
+def fetch_usgs():
+    """Fetch USGS geojson feed"""
+    try:
+        response = requests.get(USGS_FEED, timeout=60)
+        if response.status_code == 200:
+            data = response.json()
+            usgs_utils.process_data(data)
+    except requests.Timeout as request_timeout:
+        logger.exception(request_timeout)
+    except requests.ConnectionError as request_conection_error:
+        logger.exception(request_conection_error)
+
+
+def main():
+    """Main Start"""
+    while True:
+        fetch_usgs()
+        time.sleep(SLEEP_SECONDS)
