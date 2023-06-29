@@ -1,5 +1,6 @@
 """
 Fetch USGS geojson feed
+www.usgs.gov
 """
 import time
 import requests
@@ -16,6 +17,7 @@ USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.
 # USGS_FEED = "https://earthquake.usgs.gov/fdsnws/event/1/query.geojson?starttime=2023-01-01%2000:00:00&endtime=2023-06-27%2023:59:59&minmagnitude=2.5&orderby=time-asc"
 
 SLEEP_SECONDS = 60
+
 
 def fetch_usgs():
     """Fetch USGS geojson feed"""
