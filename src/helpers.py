@@ -17,6 +17,8 @@ logger.add(
     format="[{time:HH:mm:ss}] | <lvl>{level}</lvl> | {name}:{function} | <y>{message}{exception}</y>",
     level="DEBUG",
 )
+level_new = logger.level("NEW_EVENT", no=38, color="<r>")
+level_update = logger.level("UPDATE", no=39, color="<y>")
 
 
 class UsgsUtils:
@@ -117,18 +119,18 @@ class UsgsUtils:
                     }
                     document_data.append(document)
 
-                self.compare_id(document_data)
+                self.compare_usgs_id(document_data)
         except Exception:
             logger.exception(Exception)
 
-    def compare_id(self, data):
+    def compare_usgs_id(self, data):
         """Compare ids and save new events"""
         for element in data:
             new_id = element["id"]
             existing_id = self.db_action.find_usgs_id(new_id)
             if existing_id is True:
-                logger.info(
-                    "Id:{id} Exists Updated:{updated} \n{place} | M{mag} | Time:{time} | Network:{net} | Id:{id}",
+                logger.trace(
+                    "\nId:{id} Exists Updated:{updated} \n{place} | M{mag} | Time:{time} | Network:{net} | Id:{id}\n",
                     place=element["properties"]["place"],
                     updated=element["properties"]["updated"],
                     mag=element["properties"]["mag"],
@@ -138,8 +140,9 @@ class UsgsUtils:
                 )
                 return
             self.db_action.insert_usgs(element)
-            logger.info(
-                "New Event: {place} | M{mag} | T0:{time} \nNetwork:{net} | Id:{id}",
+            logger.log(
+                "NEW_EVENT",
+                "\n{place} | M{mag} | Time: {time} | Network: {net} | Id: {id}\n",
                 place=element["properties"]["place"],
                 mag=element["properties"]["mag"],
                 time=element["properties"]["time"],
@@ -192,20 +195,21 @@ class EmscUtils:
                 "local_timestamp": local_timestamp,
                 "id": feature["id"],
             }
-            self.compare_id(document)
+            self.compare_emsc_id(document)
 
         except Exception:
             logger.exception(Exception)
 
-    def compare_id(self, document):
+    def compare_emsc_id(self, document):
         """Compare ids and save new events"""
 
         new_id = document["id"]
         existing_id = self.db_action.find_emsc_id(new_id)
         if existing_id is True:
             self.db_action.update_document(document)
-            logger.info(
-                "Id:{id} Exists Updated:{update} \n{place} | M{mag} | Time:{time} | Network:{net} | Id:{id}",
+            logger.log(
+                "UPDATE",
+                "\n{id} Updated: {update} | {place} | M{mag} | Time:{time} | Network:{net}\n",
                 place=document["properties"]["place"],
                 mag=document["properties"]["mag"],
                 time=document["properties"]["time"],
@@ -216,8 +220,9 @@ class EmscUtils:
             return
 
         self.db_action.insert_emsc(document)
-        logger.info(
-            "New Event: {place} | M{mag} | T0:{time} \nNetwork:{net} | Id:{id}",
+        logger.log(
+            "NEW_EVENT",
+            "\n{place} | M{mag} | Time: {time} | Network: {net} | Id: {id}\n",
             place=document["properties"]["place"],
             mag=document["properties"]["mag"],
             time=document["properties"]["time"],
@@ -232,7 +237,7 @@ class SsnUtils:
     def __init__(self) -> None:
         self.db_action = SsnDbActions()
 
-    def compare_data(self, data):
+    def compare_ssn_data(self, data):
         """Compara los datos nuevos con los existentes"""
         # List Dates in existing data
         existing_data = self.db_action.get_event_list()
@@ -250,8 +255,9 @@ class SsnUtils:
             )
             if new_datetime not in existing_datetimes:
                 self.db_action.insert_ssn(element)
-                logger.info(
-                    "New Event: {place} | M{mag} | T0:{time} \nNetwork:{net}",
+                logger.log(
+                    "NEW_EVENT",
+                    "\n{place} | M{mag} | Time: {time} | Network: {net}\n",
                     place=element["referencia"],
                     mag=element["magnitud"],
                     time=element["timestamp_utc"],
