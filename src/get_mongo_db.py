@@ -28,5 +28,3 @@ def mongodb():
     return client["sismicidad"]
 
 
-if __name__ == "__main__":
-    dbname = mongodb()
