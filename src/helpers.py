@@ -14,7 +14,7 @@ logger.remove()
 logger.add(
     sink=sys.stdout,
     colorize=True,
-    format="[{time:HH:mm:ss}] | <lvl>{level}</lvl> | {name}:{function} | <y>{message}{exception}</y>",
+    format="[{time:HH:mm:ss}] | <lvl>{level}</lvl> | {name}:{function} | <b><y>{message}{exception}</y></b>",
     level="DEBUG",
 )
 level_new = logger.level("NEW_EVENT", no=38, color="<r>")
@@ -130,7 +130,7 @@ class UsgsUtils:
             existing_id = self.db_action.find_usgs_id(new_id)
             if existing_id is True:
                 logger.trace(
-                    "\nId:{id} Exists Updated:{updated} \n{place} | M{mag} | Time:{time} | Network:{net} | Id:{id}\n",
+                    "\n{id} Exists | Updated:{updated}{place} | M{mag} | Time:{time} | Id:{id} | Network:{net} \n ",
                     place=element["properties"]["place"],
                     updated=element["properties"]["updated"],
                     mag=element["properties"]["mag"],
@@ -142,7 +142,7 @@ class UsgsUtils:
             self.db_action.insert_usgs(element)
             logger.log(
                 "NEW_EVENT",
-                "\n{place} | M{mag} | Time: {time} | Network: {net} | Id: {id}\n",
+                "\n{place} | M{mag} | Time: {time} | Id: {id} | Network: {net}\n",
                 place=element["properties"]["place"],
                 mag=element["properties"]["mag"],
                 time=element["properties"]["time"],
@@ -222,7 +222,7 @@ class EmscUtils:
         self.db_action.insert_emsc(document)
         logger.log(
             "NEW_EVENT",
-            "\n{place} | M{mag} | Time: {time} | Network: {net} | Id: {id}\n",
+            "\n{place} | M{mag} | Time: {time} | Id: {id} | Network: {net}\n",
             place=document["properties"]["place"],
             mag=document["properties"]["mag"],
             time=document["properties"]["time"],

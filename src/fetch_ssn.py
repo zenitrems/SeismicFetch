@@ -40,7 +40,7 @@ def parse_ssn(response):
         ssn_ultimo_start_index:ssn_ultimo_finish_index
     ]
     ssn_ultima_actualizacion = ssn_ultimo_extract_date.replace("  ", " ")
-    logger.info(f"SSN Latest Update: {ssn_ultima_actualizacion} UTC-6")
+    logger.trace(f"SSN Latest Update: {ssn_ultima_actualizacion} UTC-6")
     table = soup.find("table")
     rows = table.find_all("tr")
     process_data(rows)
@@ -86,7 +86,7 @@ def process_data(rows):
         }
         json_data.append(document)
     json_data.reverse()
-    ssn_utils.compare_data(json_data)
+    ssn_utils.compare_ssn_data(json_data)
 
 
 def main():
