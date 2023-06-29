@@ -2,7 +2,6 @@
 Telegram bot
 """
 import os
-import logging
 import asyncio
 from dotenv import load_dotenv
 from telegram import Update, Bot
@@ -13,11 +12,9 @@ from telegram.ext import (
     ContextTypes,
 )
 from telegram.error import TelegramError
+from helpers import logger
 
 load_dotenv()
-logging.basicConfig(
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO
-)
 
 
 class MyBot:
@@ -48,7 +45,7 @@ class MyBot:
                 chat_id="@earthquake_notify", text=evento, parse_mode="HTML"
             )
         except TelegramError as telegram_error:
-            print("Error al enviar el mensaje", str(telegram_error))
+            logger.exception(telegram_error)
 
     async def send_error(self, evento):
         """send error to bot chat"""
@@ -58,7 +55,7 @@ class MyBot:
                 chat_id="1505812784", text=texto, parse_mode="HTML"
             )
         except TelegramError as telegram_error:
-            print(f"Error al enviar el mensaje: {telegram_error}")
+            logger.exception(telegram_error)
 
     def run(self):
         """run method"""
@@ -73,6 +70,5 @@ class MyBot:
 
 # Ejemplo de uso
 if __name__ == "__main__":
-    token = os.getenv("TELEGRAM_KEY")
-    bot = MyBot(token)
+    bot = MyBot(os.getenv("TELEGRAM_KEY"))
     asyncio.run(bot.run())
