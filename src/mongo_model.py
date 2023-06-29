@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 import pytz
 from pymongo.errors import PyMongoError
 from get_mongo_db import mongodb
+from helpers import logger
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
@@ -25,23 +26,17 @@ class UsgsDbActions:
             self.usgs_collection.insert_one(event)
 
         except PyMongoError as mongo_error:
-            print("MongoDB error", str(mongo_error))
+            logger.exception(mongo_error)
 
-    def get_usgs_ids(self):
+    def find_usgs_id(self, document_id):
         """Get latest USGS event id's"""
         try:
-            usgs_id_list = list(
-                self.usgs_collection.aggregate(
-                    [
-                        {"$match": {"properties.time": {"$gt": self.start_date}}},
-                        {"$project": {"id": 1}},
-                    ]
-                )
-            )
+            find_id = self.usgs_collection.find_one({"id": document_id})
         except PyMongoError as mongo_error:
-            print("MongoDB error", str(mongo_error))
-
-        return usgs_id_list
+            logger.exception(mongo_error)
+        if find_id:
+            return True
+        return False
 
 
 class EmscDbActions:
@@ -57,14 +52,14 @@ class EmscDbActions:
             self.emsc_collection.insert_one(event)
 
         except PyMongoError as mongo_error:
-            print("MongoDB error", str(mongo_error))
+            logger.exception(mongo_error)
 
     def find_emsc_id(self, document_id):
         """Get latest EMSC event id's"""
         try:
             find_id = self.emsc_collection.find_one({"id": document_id})
         except PyMongoError as mongo_error:
-            print("MongoDB error", str(mongo_error))
+            logger.exception(mongo_error)
         if find_id:
             return True
         return False
@@ -76,4 +71,4 @@ class EmscDbActions:
             self.emsc_collection.update_one(document_id, {"$set": document})
 
         except PyMongoError as mongo_error:
-            print("MongoDB error", str(mongo_error))
+            logger.exception(mongo_error)

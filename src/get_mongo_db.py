@@ -1,9 +1,8 @@
 """
 Mongo Client
 """
-
 from pymongo import MongoClient, monitoring
-from loguru import logger
+from helpers import logger
 
 
 class CustomCommandLogger(monitoring.CommandListener):
