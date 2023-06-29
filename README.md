@@ -8,6 +8,9 @@ USGS proporciona un feed en geojson https://earthquake.usgs.gov/earthquakes/feed
 
 ## Todo:
 
+- Establecer una forma segura para terminar los threads y salir del programa
+- Crear un estilo para los Nuevos eventos y Actualizaciones.
+
 - pruebas unitarias
 - validacion de datos
 - continuar con seedlinkclient
