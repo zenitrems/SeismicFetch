@@ -2,6 +2,7 @@
 Telegram Bot Parse events
 """
 import os
+import asyncio
 from datetime import datetime
 from dotenv import load_dotenv
 from helpers import logger
@@ -19,7 +20,7 @@ class SsnBotParse:
     def __init__(self) -> None:
         pass
 
-    async def parse_event(self, data):
+    def parse_event(self, data):
         """Parse event text"""
         local_timestamp = datetime.strptime(
             data["fecha"] + " " + data["hora"], "%Y-%m-%d %H:%M:%S"
@@ -34,7 +35,7 @@ class SsnBotParse:
             "lon": data["longitud"],
             "net": "SSN",
         }
-        await message_template(event)
+        asyncio.run(message_template(event))
 
 
 class UsgsBotParse:
@@ -43,7 +44,7 @@ class UsgsBotParse:
     def __init__(self) -> None:
         pass
 
-    async def parse_event(self, data):
+    def parse_event(self, data):
         """Parse event text"""
         event = {
             "utc_timestamp": data["properties"]["time"],
@@ -55,7 +56,7 @@ class UsgsBotParse:
             "lon": data["geometry"]["coordinates"][0],
             "net": "USGS",
         }
-        await message_template(event)
+        asyncio.run(message_template(event))
 
 
 class EmscBotParse:
@@ -64,7 +65,7 @@ class EmscBotParse:
     def __init__(self) -> None:
         pass
 
-    async def parse_event(self, data):
+    def parse_event(self, data):
         """Parse event text"""
         event = {
             "utc_timestamp": data["properties"]["time"],
@@ -76,7 +77,7 @@ class EmscBotParse:
             "lon": data["geometry"]["coordinates"][0],
             "net": "EMSC",
         }
-        await message_template(event)
+        asyncio.run(message_template(event))
 
 
 async def message_template(event):
@@ -91,3 +92,4 @@ async def message_template(event):
             f"<b>Profundidad:</b> {event['depth']}\n"
         )
         await bot.send_evento(template)
+    return

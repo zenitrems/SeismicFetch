@@ -29,7 +29,7 @@ def fetch_usgs():
             data = response.json()
             new_events = usgs_utils.process_data(data)
             if new_events:
-                print(".")
+                bot_action.parse_event(new_events)
 
     except requests.Timeout as request_timeout:
         logger.exception(request_timeout)

@@ -46,7 +46,7 @@ def parse_ssn(response):
     rows = table.find_all("tr")
     new_events = ssn_utils.process_data(rows)
     if new_events:
-        print(".")
+        bot_action.parse_event(new_events)
 
 
 def main():

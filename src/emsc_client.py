@@ -7,9 +7,10 @@ import json
 from tornado.websocket import websocket_connect, WebSocketError
 from tornado.ioloop import IOLoop
 from tornado import gen
+from telegram_parse import EmscBotParse
 
 from helpers import EmscUtils, logger
-
+bot_action = EmscBotParse()
 
 ECHO_URI = "wss://www.seismicportal.eu/standing_order/websocket"
 PING_INTERVAL = 15
@@ -23,8 +24,8 @@ def process_event(message):
     try:
         data = json.loads(message)
         new_events = emsc_utils.process_data(data)
-        if new_events:
-            print(".")
+        #if new_events:
+            #bot_action.parse_event(new_events)
     except json.JSONDecodeError:
         logger.exception(json.JSONDecodeError)
 
