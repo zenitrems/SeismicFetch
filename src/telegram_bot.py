@@ -2,6 +2,7 @@
 Telegram bot
 """
 import os
+import logging
 import asyncio
 from dotenv import load_dotenv
 from telegram import Update, Bot
@@ -12,9 +13,13 @@ from telegram.ext import (
     ContextTypes,
 )
 from telegram.error import TelegramError
-from helpers import logger
 
 load_dotenv()
+
+logging.basicConfig(
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
+    level=logging.INFO
+)
 
 
 class MyBot:
@@ -34,9 +39,7 @@ class MyBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle message from chat"""
         message_text = update.message.text
-        await context.bot.send_message(
-            chat_id=update.effective_chat.id, text=message_text
-        )
+        await context.bot.send_message(chat_id=update.effective_chat.id, text=message_text)
 
     async def send_evento(self, evento):
         """send evento to chat"""
@@ -45,17 +48,15 @@ class MyBot:
                 chat_id="@earthquake_notify", text=evento, parse_mode="HTML"
             )
         except TelegramError as telegram_error:
-            logger.exception(telegram_error)
+            logging.exception(telegram_error)
 
     async def send_error(self, evento):
         """send error to bot chat"""
         try:
             texto = f"<b>ERROR</b>\n\n</code>{evento}</code>"
-            await self.bot.send_message(
-                chat_id="1505812784", text=texto, parse_mode="HTML"
-            )
+            await self.bot.send_message(chat_id="1505812784", text=texto, parse_mode="HTML")
         except TelegramError as telegram_error:
-            logger.exception(telegram_error)
+            logging.exception(telegram_error)
 
     def run(self):
         """run method"""
@@ -68,7 +69,8 @@ class MyBot:
         self.app.run_polling()
 
 
-# Ejemplo de uso
+# Start Bot Script
 if __name__ == "__main__":
     bot = MyBot(os.getenv("TELEGRAM_KEY"))
     asyncio.run(bot.run())
+    

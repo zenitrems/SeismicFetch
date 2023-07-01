@@ -2,41 +2,61 @@
 Seismic Fetch
 """
 import threading
+import sys
+import signal
 
+from tornado.ioloop import IOLoop
+from helpers import logger
 import fetch_usgs
 import emsc_client
 import fetch_ssn
 
-EXIT_FLAG = False
 
+class ScriptStart:
+    """Start Watching"""
 
-def ssn_fetch():
-    """Fetch USGS Feed"""
-    while not EXIT_FLAG:
+    def __init__(self) -> None:
+        self.main()
+
+    def ssn_fetch(self):
+        """Fetch USGS Feed"""
+        logger.info("Fetching SSN")
         fetch_ssn.main()
 
-
-def usgs_fetch():
-    """Fetch USGS Feed"""
-    while not EXIT_FLAG:
+    def usgs_fetch(self):
+        """Fetch USGS Feed"""
+        logger.info("Fetching USGS")
         fetch_usgs.main()
 
+    def emsc_socket(self):
+        """Start EMSC Client"""
+        ioloop = IOLoop.instance()
+        emsc_client.launch_client()
+        ioloop.start()
 
-def emsc_socket():
-    """Start EMSC Client"""
-    while not EXIT_FLAG:
-        emsc_client.main()
+    def main(self):
+        """Main Function"""
+        thread_0 = threading.Thread(target=self.ssn_fetch)
+        thread_1 = threading.Thread(target=self.usgs_fetch)
+        thread_2 = threading.Thread(target=self.emsc_socket)
+
+        thread_0.start()
+        thread_1.start()
+        thread_2.start()
+
+        thread_0.join()
+        thread_1.join()
+        thread_2.join()
 
 
-thread0 = threading.Thread(target=ssn_fetch)
-thread1 = threading.Thread(target=usgs_fetch)
-thread2 = threading.Thread(target=emsc_socket)
+def stop_handler(signal, frame):
+    """Stop Program"""
+    logger.info("stopping")
+    IOLoop.current().stop()
+    sys.exit(0)
 
-thread0.start()
-thread1.start()
-thread2.start()
-input("Presiona Enter para salir...")
-EXIT_FLAG = True
-thread0.join()
-thread1.join()
-thread2.join()
+
+signal.signal(signal.SIGINT, stop_handler)
+
+if __name__ == "__main__":
+    ScriptStart()

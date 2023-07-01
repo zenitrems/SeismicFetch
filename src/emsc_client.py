@@ -18,11 +18,13 @@ PING_INTERVAL = 15
 emsc_utils = EmscUtils()
 
 
-def process_event( message):
+def process_event(message):
     """Process Event"""
     try:
         data = json.loads(message)
-        emsc_utils.process_data(data)
+        new_events = emsc_utils.process_data(data)
+        if new_events:
+            print(".")
     except json.JSONDecodeError:
         logger.exception(json.JSONDecodeError)
 
@@ -44,22 +46,20 @@ def launch_client():
     """Launch Web Socket Client"""
     try:
         logger.info(
-            f"Open connection to: seismicportal.eu Ping:{PING_INTERVAL}",
+            f"Open connection to EMSC Ping: {PING_INTERVAL}",
         )
         web_socket = yield websocket_connect(ECHO_URI, ping_interval=PING_INTERVAL)
     except WebSocketError:
         logger.exception(WebSocketError)
     else:
-        logger.info("listening to events")
         listen_events(web_socket)
 
 
-def main():
-    """Start Script"""
+if __name__ == "__main__":
     ioloop = IOLoop.instance()
     launch_client()
     try:
         ioloop.start()
     except KeyboardInterrupt:
-        logger.info("Close WebSocket")
+        logger.info("Close Client")
         ioloop.stop()

@@ -6,11 +6,13 @@ import time
 import requests
 from dotenv import load_dotenv
 from helpers import UsgsUtils, logger
+from telegram_parse import UsgsBotParse
 
 
 load_dotenv()
 
 usgs_utils = UsgsUtils()
+bot_action = UsgsBotParse()
 
 # USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"
 USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_hour.geojson"
@@ -25,7 +27,10 @@ def fetch_usgs():
         response = requests.get(USGS_FEED, timeout=60)
         if response.status_code == 200:
             data = response.json()
-            usgs_utils.process_data(data)
+            new_events = usgs_utils.process_data(data)
+            if new_events:
+                print(".")
+
     except requests.Timeout as request_timeout:
         logger.exception(request_timeout)
     except requests.ConnectionError as request_conection_error:
@@ -37,3 +42,7 @@ def main():
     while True:
         fetch_usgs()
         time.sleep(SLEEP_SECONDS)
+
+
+if __name__ == "__main__":
+    main()
