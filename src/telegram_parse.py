@@ -1,17 +1,11 @@
 """
 Telegram Bot Parse events
 """
-import os
-import asyncio
 from datetime import datetime
-from dotenv import load_dotenv
-from helpers import logger
+import asyncio
 from telegram_bot import MyBot
 
-load_dotenv()
-bot = MyBot(os.getenv("TELEGRAM_KEY"))
-
-logger.info("Telegram")
+bot = MyBot()
 
 
 class SsnBotParse:
@@ -22,20 +16,21 @@ class SsnBotParse:
 
     def parse_event(self, data):
         """Parse event text"""
-        local_timestamp = datetime.strptime(
-            data["fecha"] + " " + data["hora"], "%Y-%m-%d %H:%M:%S"
-        )
-        event = {
-            "utc_timestamp": data["timestamp_utc"],
-            "local_timestamp": local_timestamp,
-            "mag": data["magnitud"],
-            "place": data["referencia"],
-            "depth": data["profundidad"],
-            "lat": data["latitud"],
-            "lon": data["longitud"],
-            "net": "SSN",
-        }
-        asyncio.run(message_template(event))
+        for element in data:
+            local_timestamp = datetime.strptime(
+                element["fecha"] + " " + element["hora"], "%Y-%m-%d %H:%M:%S"
+            )
+            event = {
+                "utc_timestamp": element["timestamp_utc"],
+                "local_timestamp": local_timestamp,
+                "mag": element["magnitud"],
+                "place": element["referencia"],
+                "depth": element["profundidad"],
+                "lat": element["latitud"],
+                "lon": element["longitud"],
+                "net": "SSN",
+            }
+            message_template(event)
 
 
 class UsgsBotParse:
@@ -46,17 +41,18 @@ class UsgsBotParse:
 
     def parse_event(self, data):
         """Parse event text"""
-        event = {
-            "utc_timestamp": data["properties"]["time"],
-            "local_timestamp": data["local_timestamp"],
-            "mag": data["properties"]["mag"],
-            "place": data["properties"]["place"],
-            "depth": data["geometry"]["coordinates"][2],
-            "lat": data["geometry"]["coordinates"][1],
-            "lon": data["geometry"]["coordinates"][0],
-            "net": "USGS",
-        }
-        asyncio.run(message_template(event))
+        for element in data:
+            event = {
+                "utc_timestamp": element["properties"]["time"],
+                "local_timestamp": element["local_timestamp"],
+                "mag": element["properties"]["mag"],
+                "place": element["properties"]["place"],
+                "depth": element["geometry"]["coordinates"][2],
+                "lat": element["geometry"]["coordinates"][1],
+                "lon": element["geometry"]["coordinates"][0],
+                "net": "USGS",
+            }
+            message_template(event)
 
 
 class EmscBotParse:
@@ -67,29 +63,28 @@ class EmscBotParse:
 
     def parse_event(self, data):
         """Parse event text"""
-        event = {
-            "utc_timestamp": data["properties"]["time"],
-            "local_timestamp": data["local_timestamp"],
-            "mag": data["properties"]["mag"],
-            "place": data["properties"]["place"],
-            "depth": data["geometry"]["coordinates"][2],
-            "lat": data["geometry"]["coordinates"][1],
-            "lon": data["geometry"]["coordinates"][0],
-            "net": "EMSC",
-        }
-        asyncio.run(message_template(event))
+        for element in data:
+            event = {
+                "utc_timestamp": element["properties"]["time"],
+                "local_timestamp": element["local_timestamp"],
+                "mag": element["properties"]["mag"],
+                "place": element["properties"]["place"],
+                "depth": element["geometry"]["coordinates"][2],
+                "lat": element["geometry"]["coordinates"][1],
+                "lon": element["geometry"]["coordinates"][0],
+                "net": "EMSC",
+            }
+            # telegramBot.main(event)
 
 
-async def message_template(event):
+def message_template(event):
     """Send Event to Chanel"""
-    if event["mag"] >= 4:
+    if event["mag"] >= 4.5:
         template = (
-            f"<b>{event['net']}:</b>\n\n"
-            f"<b>{event['place']}:</b>\n\n"
-            f"<b>{event['local_timestamp']}</b>\n\n"
-            f"<b>{event['utc_timestamp']}</b>\n"
-            f"<b>{event['mag']}</b>\n"
-            f"<b>Profundidad:</b> {event['depth']}\n"
+            f"<b>{event['net']} | Mag: {event['mag']} | Depth: {event['depth']} Km </b>\n\n"
+            f"<pre>{event['place']}</pre>\n\n"
+            f"<i>{event['local_timestamp']}</i>\n"
+            f"<i>{event['utc_timestamp']}</i>"
         )
-        await bot.send_evento(template)
-    return
+
+        asyncio.run(bot.send_evento(template))
