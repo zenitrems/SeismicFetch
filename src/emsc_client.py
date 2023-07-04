@@ -24,8 +24,8 @@ def process_event(message):
     try:
         data = json.loads(message)
         new_events = emsc_utils.process_data(data)
-        #if new_events:
-            #bot_action.parse_event(new_events)
+        if new_events:
+            bot_action.parse_event(new_events)
     except json.JSONDecodeError:
         logger.exception(json.JSONDecodeError)
 
