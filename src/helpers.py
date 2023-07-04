@@ -75,7 +75,7 @@ class SsnUtils:
         return self.new_events
 
     def compare_ssn_data(self, data):
-        """Compara los datos nuevos con los existentes"""
+        """Compare existing times, whith new times"""
         # List Dates in existing data
         existing_data = self.db_action.get_event_list()
         existing_datetimes = set()
@@ -216,7 +216,7 @@ class UsgsUtils:
         existing_id = self.db_action.find_usgs_id(new_id)
         if existing_id is True:
             logger.trace(
-                "\n{id} Exists | Updated:{updated}{place} | M{mag} | Time:{time} | Id:{id} | Network:{net} \n ",
+                "{id} Exists\n{place} | M{mag} | Time:{time} | Updated:{updated}| Network:{net}\n ",
                 place=data["properties"]["place"],
                 updated=data["properties"]["updated"],
                 mag=data["properties"]["mag"],
@@ -301,7 +301,7 @@ class EmscUtils:
             self.db_action.update_document(document)
             logger.log(
                 "UPDATE",
-                "\n{id} Updated: {update} | {place} | M{mag} | Time:{time} | Network:{net}\n",
+                "\n{place} | M{mag} | Time:{time} | Updated: {update} | Id: {id} | Network:{net}\n",
                 place=document["properties"]["place"],
                 mag=document["properties"]["mag"],
                 time=document["properties"]["time"],
