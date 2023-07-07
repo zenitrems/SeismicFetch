@@ -13,7 +13,7 @@ ssn_utils = SsnUtils()
 bot_action = SsnBotParse()
 
 load_dotenv()
-SLEEP_SECONDS = 180
+SLEEP_SECONDS = 60
 
 
 def fetch_ssn():
@@ -25,9 +25,9 @@ def fetch_ssn():
         if response.status_code == 200:
             parse_ssn(response)
     except requests.Timeout as request_timeout:
-        logger.exception(request_timeout)
+        logger.error(request_timeout)
     except requests.ConnectionError as request_conection_error:
-        logger.exception(request_conection_error)
+        logger.error(request_conection_error)
 
 
 def parse_ssn(response):
@@ -41,7 +41,7 @@ def parse_ssn(response):
         ssn_ultimo_start_index:ssn_ultimo_finish_index
     ]
     ssn_ultima_actualizacion = ssn_ultimo_extract_date.replace("  ", " ")
-    logger.info(f"\nSSN Latest Update: {ssn_ultima_actualizacion} UTC-6\n")
+    logger.trace(f"\nSSN Latest Update: {ssn_ultima_actualizacion} UTC-6\n")
     table = soup.find("table")
     rows = table.find_all("tr")
     new_events = ssn_utils.process_data(rows)

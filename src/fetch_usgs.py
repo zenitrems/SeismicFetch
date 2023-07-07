@@ -32,9 +32,9 @@ def fetch_usgs():
                 bot_action.parse_event(new_events)
 
     except requests.Timeout as request_timeout:
-        logger.exception(request_timeout)
+        logger.error(request_timeout)
     except requests.ConnectionError as request_conection_error:
-        logger.exception(request_conection_error)
+        logger.error(request_conection_error)
 
 
 def main():
