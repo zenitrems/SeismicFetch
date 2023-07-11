@@ -81,20 +81,22 @@ class SsnDbActions:
         self.start_date_str = self.start_date.strftime("%Y-%m-%d")
 
     def insert_ssn(self, event):
-        """Insert event to EMSC DB"""
+        """Insert event to SSN DB"""
         try:
             self.ssn_collection.insert_one(event)
 
         except PyMongoError as mongo_error:
-            logger.exception(mongo_error)
+            logger.error(mongo_error)
 
     def get_event_list(self):
-        """Get latest EMSC event id's"""
+        """Get latest SSN event id's"""
         try:
             collection_list = list(
-                self.ssn_collection.find({"fecha": {"$gte": self.start_date_str}})
+                self.ssn_collection.aggregate(
+                    [{"$match": {"fecha": {"$gte": self.start_date_str}}}]
+                )
             )
         except PyMongoError as mongo_error:
-            logger.exception(mongo_error)
+            logger.error(mongo_error)
 
         return collection_list
