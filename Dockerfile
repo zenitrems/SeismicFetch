@@ -1,9 +1,18 @@
-FROM python:3.11.4-slim
+FROM python:3.11.4-alpine
 
-WORKDIR /usr/src/app
+RUN addgroup seismic && adduser -S -G seismic seismic
 
-COPY requirements.txt ./
-COPY src/ ./
-RUN pip install --no-cache-dir -r requirements.txt
+RUN mkdir -p /app && chown seismic:seismic /app
 
-CMD [ "python3", "main.py" ]
+RUN mkdir -p /home/app/ && chown seismic:seismic /home/app
+WORKDIR /app
+RUN python3 -m venv .venv && . .venv/bin/activate
+
+COPY --chown=seismic:seismic . .
+
+USER seismic
+
+RUN pip3 install --upgrade pip
+RUN pip3 install --no-cache-dir -r requirements.txt
+
+CMD [ "python3", "src/main.py" ]
