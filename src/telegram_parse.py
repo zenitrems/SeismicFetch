@@ -3,8 +3,10 @@ Telegram Bot Parse events
 """
 from datetime import datetime
 import asyncio
+from dotenv import load_dotenv
 from telegram_bot import MyBot
 
+load_dotenv()
 bot = MyBot()
 
 
@@ -79,12 +81,14 @@ class EmscBotParse:
 
 def message_template(event):
     """Send Event to Chanel"""
-    if event["mag"] >= 4.5:
+    seismic_url = f"https://seismic.duckdns.org/#6/{event['lat']}/{event['lon']}"
+    if event["mag"] >= 4.3:
         template = (
             f"<b>{event['net']} | Mag: {event['mag']} | Depth: {event['depth']} Km </b>\n\n"
             f"<pre>{event['place']}</pre>\n\n"
             f"<i>{event['local_timestamp']}</i>\n"
-            f"<i>{event['utc_timestamp']}</i>"
+            f"<i>{event['utc_timestamp']}</i>\n\n"
+            f"<a href='{seismic_url}'>Seismic Map</a>"
         )
 
         asyncio.run(bot.send_evento(template))

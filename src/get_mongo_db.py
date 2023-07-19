@@ -4,7 +4,10 @@ Mongo Client
 import os
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
+from dotenv import load_dotenv
 from helpers import logger
+
+load_dotenv()
 
 
 def mongodb():

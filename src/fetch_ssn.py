@@ -2,6 +2,7 @@
 Fetch SSN latest Earthquakes
 www.ssn.unam.mx
 """
+import sys
 import time
 from dotenv import load_dotenv
 import requests
@@ -58,3 +59,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+    sys.exit(0)
