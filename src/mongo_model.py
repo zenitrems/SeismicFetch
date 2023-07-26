@@ -15,10 +15,10 @@ db = mongodb()
 
 class SsnDbActions:
     """SSN Database Actions"""
+
     def __init__(self) -> None:
         self.ssn_collection = db["sismicidad_ssn"]
-        self.start_date = datetime.now() - timedelta(days=3)
-        self.start_date_str = self.start_date.strftime("%Y-%m-%d")
+        self.start_date = datetime.now(tz=UTC_TIMEZONE) - timedelta(days=4)
 
     def insert_ssn(self, event):
         """Insert event to SSN DB"""
@@ -30,10 +30,14 @@ class SsnDbActions:
 
     def get_event_list(self):
         """Get latest SSN event id's"""
+
         try:
             collection_list = list(
                 self.ssn_collection.aggregate(
-                    [{"$match": {"fecha": {"$gte": self.start_date_str}}}]
+                    [
+                        {"$project": {"properties.time": 1}},
+                        {"$match": {"properties.time": {"$gte": self.start_date}}},
+                    ]
                 )
             )
         except PyMongoError as mongo_error:
