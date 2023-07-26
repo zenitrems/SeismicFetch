@@ -21,7 +21,7 @@ def fetch_ssn():
     """Fetch SSN URL"""
     try:
         response = requests.get(
-            "http://www.ssn.unam.mx/sismicidad/ultimos/", timeout=60
+            "http://www.ssn.unam.mx/sismicidad/ultimos-utc/", timeout=60
         )
         if response.status_code == 200:
             parse_ssn(response)
