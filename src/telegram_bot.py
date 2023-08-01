@@ -22,7 +22,7 @@ logging.basicConfig(
 )
 
 
-logging.getLogger("httpx").setLevel(logging.WARNING)
+# logging.getLogger("httpx").setLevel(logging.WARNING)
 handler = logging.handlers.SysLogHandler(address=("localhost", 514))
 logger.add(handler)
 
@@ -46,6 +46,7 @@ class MyBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle message from chat"""
         message_text = update.message.text
+        print(update.effective_chat.id)
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=message_text
         )

@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Seismic Fetch
 """
@@ -10,6 +11,7 @@ from helpers import logger
 import fetch_usgs
 import emsc_client
 import fetch_ssn
+
 
 
 class ScriptStart:
@@ -54,6 +56,10 @@ def stop_handler(signal, frame):
     logger.info("stopping")
     IOLoop.current().stop()
     sys.exit(0)
+
+def ping_mongo():
+    """Database"""
+    
 
 
 signal.signal(signal.SIGINT, stop_handler)
