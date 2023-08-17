@@ -74,13 +74,12 @@ class EmscBotParse:
 
 def message_template(event):
     """Send Event to Chanel"""
-    seismic_url = f"https://seismic.duckdns.org/#6/{event['lat']}/{event['lon']}"
     if event["mag"] >= 4.3:
         template = (
             f"<b>{event['auth']} | Mag: {event['mag']} | Depth: {event['depth']} Km </b>\n\n"
             f"<pre>{event['place']}</pre>\n\n"
             f"<i>{event['time']}</i>\n\n"
-            f"<a href='{seismic_url}'>Seismic Map</a>"
+    
         )
 
         asyncio.run(bot.send_evento(template))
