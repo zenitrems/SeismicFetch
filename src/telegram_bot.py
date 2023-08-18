@@ -69,7 +69,7 @@ class MyBot:
             try:
                 texto = f"<b>ERROR</b>\n\n</code>{evento}</code>"
                 await bot.send_message(
-                    chat_id="1505812784", text=texto, parse_mode="HTML"
+                    chat_id=os.getenv("TELEGRAM_CHAT_ID"), text=texto, parse_mode="HTML"
                 )
             except TelegramError as telegram_error:
                 logger.error(telegram_error)

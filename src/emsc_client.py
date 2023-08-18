@@ -10,10 +10,12 @@ from tornado import gen
 from telegram_parse import EmscBotParse
 
 from helpers import EmscUtils, logger
+
 bot_action = EmscBotParse()
 
 ECHO_URI = "wss://www.seismicportal.eu/standing_order/websocket"
 PING_INTERVAL = 15
+RETRY_INTERVAL = 5
 
 
 emsc_utils = EmscUtils()
@@ -36,10 +38,11 @@ def listen_events(web_socket):
     while True:
         msg = yield web_socket.read_message()
         if msg is None:
-            logger.info("close")
-            web_socket = None
-            break
-        process_event(msg)
+            logger.info("No message recived retrying...")
+            yield gen.sleep(RETRY_INTERVAL)
+            return
+        else:
+            process_event(msg)
 
 
 @gen.coroutine
