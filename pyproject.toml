@@ -1,0 +1,19 @@
+[build-system]
+requires = ["setuptools", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "sismosget"
+version = "2023.0.1"
+readme = "README.md"
+requires-python = ">=3.10"
+dependencies = [
+    "python-dotenv",
+    "bs4",
+    "requests",
+    "tornado",
+    "pymongo",
+    "pytz",
+    "loguru",
+    "python-telegram-bot"
+]

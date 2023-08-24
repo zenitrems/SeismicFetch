@@ -10,7 +10,8 @@ from mongo_model import UsgsDbActions, EmscDbActions, SsnDbActions
 from telegram_parse import SsnBotParse, UsgsBotParse, EmscBotParse
 
 UTC_TIMEZONE = pytz.timezone("UTC")
-AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
+
+
 logger.remove()
 logger.add(
     sink=sys.stdout,
@@ -34,7 +35,8 @@ class SsnUtils:
     def process_data(self, data):
         """Arrange table rows"""
         json_data = []
-        self.new_events = []  # cleanup new events
+        self.new_events = []  # Cleanup For new events
+
         for row in data[1:]:
             cells = row.find_all("td")
             epi_span_tags = cells[2].find_all("span")
@@ -43,65 +45,72 @@ class SsnUtils:
             datetime_span_texts = [span.text for span in datetime_span_tags]
             magnitud_text = cells[0].text
 
-            fecha_hora_str = (
-                f"{datetime_span_texts[0].strip()} {datetime_span_texts[1].strip()}"
-            )
-            fecha_hora = datetime.strptime(fecha_hora_str, "%Y-%m-%d %H:%M:%S")
-            fecha_hora_timezone = datetime.replace(
-                fecha_hora, tzinfo=pytz.timezone("America/Mexico_City")
-            )
+            fecha_hora_str = f"{datetime_span_texts[0].strip()} {datetime_span_texts[1].strip()}+00:00"
 
-            utc_timestamp = fecha_hora_timezone.astimezone(pytz.timezone("UTC"))
-
+            fecha_hora = datetime.strptime(fecha_hora_str, "%Y-%m-%d %H:%M:%S%z")
             magnitud_parts = magnitud_text.split(" ")
             is_preliminar = True if magnitud_parts[0] == "PRELIMINAR" else False
             magnitud = (
                 float(magnitud_parts[1]) if is_preliminar else float(magnitud_parts[0])
             )
 
+            # Format document With GeoJson Encoding
             document = {
-                "preliminar": is_preliminar,
-                "fecha": datetime_span_texts[0].strip(),
-                "hora": datetime_span_texts[1].strip(),
-                "timestamp_utc": utc_timestamp,
-                "magnitud": magnitud,
-                "latitud": float(epi_span_texts[1]),
-                "longitud": float(epi_span_texts[2]),
-                "profundidad": float(cells[3].text.split(" ")[0]),
-                "referencia": epi_span_texts[0].strip(),
+                "type": "Feature",
+                "geometry": {
+                    "type": "Point",
+                    "coordinates": [
+                        float(epi_span_texts[2]),  # Lon
+                        float(epi_span_texts[1]),  # Lat
+                        float(cells[3].text.split(" ")[0]),  # Depth
+                    ],
+                },
+                "properties": {
+                    "mag": magnitud,
+                    "place": epi_span_texts[0].strip(),
+                    "time": fecha_hora,
+                    "updated": None,
+                    "preliminary": is_preliminar,
+                    "status": None,
+                    "auth": "SSN",
+                    "url": None,
+                    "magType": "m",
+                    "type": "earthquake",
+                },
             }
             json_data.append(document)
+        json_data.reverse()
         self.compare_ssn_data(json_data)
         return self.new_events
 
     def compare_ssn_data(self, data):
         """Compare existing times, whith new times"""
-        # List Dates in existing data
-        existing_data = self.db_action.get_event_list()
+        existing_data = self.db_action.get_event_list()  # List Dates in existing data
         existing_datetimes = set()
-        for element in existing_data:
-            time_date = datetime.strptime(
-                element["fecha"] + " " + element["hora"], "%Y-%m-%d %H:%M:%S"
-            )
-            existing_datetimes.add(time_date)
 
-        # Filter and save
+        for element in existing_data:
+            time = element["properties"]["time"]
+            existing_datetimes.add(time.replace(microsecond=0, tzinfo=UTC_TIMEZONE))
+        # Filter new elements and save
+
         for element in data:
-            new_datetime = datetime.strptime(
-                element["fecha"] + " " + element["hora"], "%Y-%m-%d %H:%M:%S"
+            new_datetime = element["properties"]["time"].replace(
+                microsecond=0, tzinfo=UTC_TIMEZONE
             )
+
             if new_datetime not in existing_datetimes:
                 self.db_action.insert_ssn(element)
+                print(new_datetime)
+
                 logger.log(
                     "NEW_EVENT",
                     "\n{place} | M{mag} | Time: {time} | Network: {net}\n",
-                    place=element["referencia"],
-                    mag=element["magnitud"],
-                    time=element["timestamp_utc"],
-                    net="SSN",
+                    place=element["properties"]["place"],
+                    mag=element["properties"]["mag"],
+                    time=element["properties"]["time"],
+                    net=element["properties"]["auth"],
                 )
                 self.new_events.append(element)
-
         return self.new_events
 
 
@@ -125,11 +134,9 @@ class UsgsUtils:
 
                     timestamp = datetime.fromtimestamp(time_usgs, tz=UTC_TIMEZONE)
                     updated = datetime.fromtimestamp(time_updated, tz=UTC_TIMEZONE)
-                    local_timestamp = timestamp.astimezone(
-                        tz=AMERICA_MEXICO_TIMEZONE
-                    ).isoformat()
                     document = {
                         "type": feature["type"],
+                        "geometry": feature["geometry"],
                         "properties": {
                             "mag": feature["properties"]["mag"],
                             "place": feature["properties"]["place"],
@@ -199,9 +206,7 @@ class UsgsUtils:
                                 "type"
                             ],  # Type of seismic event.
                         },
-                        "geometry": feature["geometry"],
                         "id": feature["id"],
-                        "local_timestamp": local_timestamp,
                     }
                     self.compare_usgs_id(document)
 
@@ -262,16 +267,12 @@ class EmscUtils:
                 format_lastupdate, "%Y-%m-%dT%H:%M:%S.%f"
             )
 
-            utc_timezone = datetime.replace(datetimeobj_time, tzinfo=UTC_TIMEZONE)
-            local_timestamp = utc_timezone.astimezone(
-                tz=AMERICA_MEXICO_TIMEZONE
-            ).isoformat()
-
             document = {
                 "type": feature["type"],
+                "geometry": feature["geometry"],
                 "properties": {
                     "time": datetimeobj_time,
-                    "lastupdate": datetimeobj_lastupdate,
+                    "updated": datetimeobj_lastupdate,
                     "place": feature["properties"]["flynn_region"],
                     "mag": feature["properties"]["mag"],
                     "magType": feature["properties"]["magtype"],
@@ -281,8 +282,6 @@ class EmscUtils:
                     "source_catalog": feature["properties"]["source_catalog"],
                     "unid": feature["properties"]["unid"],
                 },
-                "geometry": feature["geometry"],
-                "local_timestamp": local_timestamp,
                 "id": feature["id"],
             }
             self.compare_emsc_id(document)
@@ -305,7 +304,7 @@ class EmscUtils:
                 place=document["properties"]["place"],
                 mag=document["properties"]["mag"],
                 time=document["properties"]["time"],
-                update=document["properties"]["lastupdate"],
+                update=document["properties"]["updated"],
                 net=document["properties"]["auth"],
                 id=document["id"],
             )

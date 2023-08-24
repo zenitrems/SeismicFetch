@@ -1,30 +1,30 @@
 """
 Mongo Client
 """
-from pymongo import MongoClient, monitoring
+import os
+from pymongo import MongoClient
+from pymongo.errors import PyMongoError
+from dotenv import load_dotenv
 from helpers import logger
 
-
-class CustomCommandLogger(monitoring.CommandListener):
-    """Custom"""
-
-    def started(self, event):
-        logger.trace(f"{event.command_name} Start")
-
-    def succeeded(self, event):
-        logger.trace(f"{event.command_name} Succeeded")
-
-    def failed(self, event):
-        logger.error(f"{event.command_name} Failed")
+load_dotenv()
+client = MongoClient(os.getenv("MONGO_URI"))
+db = client["sismicidad"]
 
 
-# Configura el logger personalizado
-command_logger = CustomCommandLogger()
-
-
-def mongodb():
+def db_connect():
     """Mongo init"""
-    client = MongoClient("mongodb://localhost", event_listeners=[command_logger])
-    return client["sismicidad"]
+    try:
+        db.list_collections()
+        return db
+
+    except PyMongoError as mongo_error:
+        logger.error("DB CONNECTION FAILED")
+        logger.exception(mongo_error)
+        return None
 
 
+def db_close():
+    """Mongo Client Close"""
+    logger.info("Mongo Client Close")
+    client.close()

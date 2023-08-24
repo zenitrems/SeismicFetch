@@ -4,13 +4,46 @@ Mongo data Model
 from datetime import datetime, timedelta
 import pytz
 from pymongo.errors import PyMongoError
-from get_mongo_db import mongodb
+from get_mongo_db import db_connect
 from helpers import logger
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
 
-db = mongodb()
+db = db_connect()
+
+
+class SsnDbActions:
+    """SSN Database Actions"""
+
+    def __init__(self) -> None:
+        self.ssn_collection = db["sismicidad_ssn"]
+        self.start_date = datetime.now(tz=UTC_TIMEZONE) - timedelta(days=4)
+
+    def insert_ssn(self, event):
+        """Insert event to SSN DB"""
+        try:
+            self.ssn_collection.insert_one(event)
+
+        except PyMongoError as mongo_error:
+            logger.error(mongo_error)
+
+    def get_event_list(self):
+        """Get latest SSN event id's"""
+
+        try:
+            collection_list = list(
+                self.ssn_collection.aggregate(
+                    [
+                        {"$project": {"properties.time": 1}},
+                        {"$match": {"properties.time": {"$gte": self.start_date}}},
+                    ]
+                )
+            )
+        except PyMongoError as mongo_error:
+            logger.error(mongo_error)
+
+        return collection_list
 
 
 class UsgsDbActions:
@@ -72,29 +105,3 @@ class EmscDbActions:
 
         except PyMongoError as mongo_error:
             logger.exception(mongo_error)
-
-
-class SsnDbActions:
-    def __init__(self) -> None:
-        self.ssn_collection = db["sismicidad_ssn"]
-        self.start_date = datetime.now() - timedelta(days=3)
-        self.start_date_str = self.start_date.strftime("%Y-%m-%d")
-
-    def insert_ssn(self, event):
-        """Insert event to EMSC DB"""
-        try:
-            self.ssn_collection.insert_one(event)
-
-        except PyMongoError as mongo_error:
-            logger.exception(mongo_error)
-
-    def get_event_list(self):
-        """Get latest EMSC event id's"""
-        try:
-            collection_list = list(
-                self.ssn_collection.find({"fecha": {"$gte": self.start_date_str}})
-            )
-        except PyMongoError as mongo_error:
-            logger.exception(mongo_error)
-
-        return collection_list

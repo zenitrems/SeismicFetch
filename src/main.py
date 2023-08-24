@@ -1,3 +1,4 @@
+#!/usr/bin/env python3
 """
 Seismic Fetch
 """
@@ -7,9 +8,11 @@ import signal
 
 from tornado.ioloop import IOLoop
 from helpers import logger
+from get_mongo_db import db_close
 import fetch_usgs
 import emsc_client
 import fetch_ssn
+
 
 
 class ScriptStart:
@@ -52,9 +55,9 @@ class ScriptStart:
 def stop_handler(signal, frame):
     """Stop Program"""
     logger.info("stopping")
+    db_close()
     IOLoop.current().stop()
     sys.exit(0)
-
 
 signal.signal(signal.SIGINT, stop_handler)
 
