@@ -56,7 +56,7 @@ class MyBot:
         async with self.bot as bot:
             try:
                 await bot.send_message(
-                    chat_id="@earthquake_notify", text=evento, parse_mode="HTML"
+                    chat_id=os.getenv("TELEGRAM_GROUP"), text=evento, parse_mode="HTML"
                 )
             except TelegramError as telegram_error:
                 logging.error(telegram_error)
