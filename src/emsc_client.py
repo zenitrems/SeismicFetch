@@ -4,8 +4,9 @@ www.seismicportal.eu
 """
 from __future__ import unicode_literals
 import json
-from tornado.websocket import websocket_connect, WebSocketError
+from tornado.websocket import websocket_connect, WebSocketError, WebSocketClosedError
 from tornado.ioloop import IOLoop
+from tornado.platform.asyncio import to_asyncio_future
 from tornado import gen
 from telegram_parse import EmscBotParse
 
@@ -25,9 +26,10 @@ def process_event(message):
     """Process Event"""
     try:
         data = json.loads(message)
+
         new_events = emsc_utils.process_data(data)
         if new_events:
-            bot_action.parse_event(new_events)
+            to_asyncio_future(bot_action.parse_event(new_events))
     except json.JSONDecodeError:
         logger.exception(json.JSONDecodeError)
 
@@ -39,10 +41,15 @@ def listen_events(web_socket):
         msg = yield web_socket.read_message()
         if msg is None:
             logger.info("No message recived retrying...")
+            # Handle socket Disconect
             yield gen.sleep(RETRY_INTERVAL)
-            return
-        else:
-            process_event(msg)
+            try:
+                web_socket = yield websocket_connect(
+                    ECHO_URI, ping_interval=PING_INTERVAL
+                )
+            except WebSocketClosedError:
+                logger.exception(WebSocketClosedError)
+        process_event(msg)
 
 
 @gen.coroutine
@@ -53,10 +60,11 @@ def launch_client():
             f"Open connection to EMSC Ping: {PING_INTERVAL}",
         )
         web_socket = yield websocket_connect(ECHO_URI, ping_interval=PING_INTERVAL)
+
     except WebSocketError:
         logger.exception(WebSocketError)
-    else:
-        listen_events(web_socket)
+
+    listen_events(web_socket)
 
 
 if __name__ == "__main__":
