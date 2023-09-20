@@ -7,7 +7,7 @@ from telegram_bot import MyBot
 
 load_dotenv()
 bot = MyBot()
-MAG_THRESHOLD = float(4.3)
+MAG_THRESHOLD = float(5.0)
 
 
 class SsnBotParse:
