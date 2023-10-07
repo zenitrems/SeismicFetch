@@ -1,23 +1,24 @@
 """
-Telegram Bot Parse events
+Parse each event in the array to separate events above the magnitude threshold, 
+and creates an HTML template to send to the telegram channel with specific data for each agency. 
 """
 import asyncio
 from dotenv import load_dotenv
-from telegram_bot import MyBot
+from src import telegram_bot
 
 load_dotenv()
-bot = MyBot()
+bot = telegram_bot.MyBot()
 MAG_THRESHOLD = float(5.0)
 
 
 class SsnBotParse:
-    """Telegram chanel Events"""
+    """Parse Class For SSN Events"""
 
     def __init__(self):
         pass
 
     def parse_event(self, data):
-        """Parse event text"""
+        """For each event Create a template"""
         for element in data:
             event = {
                 "time": element["properties"]["time"],
@@ -28,6 +29,7 @@ class SsnBotParse:
                 "lat": element["geometry"]["coordinates"][1],
                 "lon": element["geometry"]["coordinates"][0],
                 "auth": element["properties"]["auth"],
+                "preliminar": element["properties"]["preliminary"],
             }
             self.template_event(event)
 
@@ -38,18 +40,19 @@ class SsnBotParse:
                 f"<b>{event['auth']} | {event['magType']} {event['mag']} | Depth: {event['depth']} Km </b>\n\n"
                 f"<pre>{event['place']}</pre>\n\n"
                 f"<i>{event['time']}</i>\n\n"
+                f"<i>{event['preliminar']}</i>\n\n"
             )
             asyncio.run(bot.send_evento(template))
 
 
 class UsgsBotParse:
-    """Telegram chanel Events"""
+    """Parse Class For USGS Events"""
 
     def __init__(self):
         pass
 
     def parse_event(self, data):
-        """Parse event text"""
+        """For each event Create a template"""
         for element in data:
             event = {
                 "time": element["properties"]["time"],
@@ -76,13 +79,13 @@ class UsgsBotParse:
 
 
 class EmscBotParse:
-    """Telegram chanel Events"""
+    """Parse Class For EMSC Events"""
 
     def __init__(self):
         pass
 
     async def parse_event(self, data):
-        """Parse event text"""
+        """For each event Create a template"""
         for element in data:
             event = {
                 "time": element["properties"]["time"],

@@ -7,11 +7,12 @@ import time
 from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
-from helpers import SsnUtils, logger
-from telegram_parse import SsnBotParse
+from src import helpers, telegram_parse
 
-ssn_utils = SsnUtils()
-bot_action = SsnBotParse()
+
+ssn_utils = helpers.SsnUtils()
+bot_action = telegram_parse.SsnBotParse()
+logger = helpers.logger
 
 load_dotenv()
 SLEEP_SECONDS = 60

@@ -8,11 +8,9 @@ import signal
 
 from tornado.ioloop import IOLoop
 from helpers import logger
-from get_mongo_db import db_close
-import fetch_usgs
-import emsc_client
-import fetch_ssn
+from src import helpers, get_mongo_db, fetch_ssn, fetch_usgs, emsc_client
 
+logger = helpers.logger
 
 
 class ScriptStart:
@@ -55,9 +53,10 @@ class ScriptStart:
 def stop_handler(signal, frame):
     """Stop Program"""
     logger.info("stopping")
-    db_close()
+    get_mongo_db.db_close()
     IOLoop.current().stop()
     sys.exit(0)
+
 
 signal.signal(signal.SIGINT, stop_handler)
 

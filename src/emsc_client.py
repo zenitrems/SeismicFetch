@@ -8,18 +8,18 @@ from tornado.websocket import websocket_connect, WebSocketError, WebSocketClosed
 from tornado.ioloop import IOLoop
 from tornado.platform.asyncio import to_asyncio_future
 from tornado import gen
-from telegram_parse import EmscBotParse
+from src import helpers, telegram_parse
 
-from helpers import EmscUtils, logger
 
-bot_action = EmscBotParse()
+bot_action = telegram_parse.EmscBotParse()
 
 ECHO_URI = "wss://www.seismicportal.eu/standing_order/websocket"
 PING_INTERVAL = 15
 RETRY_INTERVAL = 5
 
 
-emsc_utils = EmscUtils()
+emsc_utils = helpers.EmscUtils()
+logger = helpers.logger
 
 
 def process_event(message):

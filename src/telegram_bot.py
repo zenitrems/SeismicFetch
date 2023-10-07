@@ -13,9 +13,13 @@ from telegram.ext import (
     ContextTypes,
 )
 from telegram.error import TelegramError
-from helpers import logger
+from src import helpers
 
 load_dotenv()
+
+
+logger = helpers.logger
+
 
 logging.basicConfig(
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s", level=logging.INFO

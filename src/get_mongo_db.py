@@ -5,11 +5,12 @@ import os
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
-from helpers import logger
+from src import helpers
 
 load_dotenv()
 client = MongoClient(os.getenv("MONGO_URI"))
 db = client["sismicidad"]
+logger = helpers.logger
 
 
 def db_connect():
