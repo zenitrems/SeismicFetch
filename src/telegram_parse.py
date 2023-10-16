@@ -73,6 +73,7 @@ class UsgsBotParse:
                 "status": element["properties"]["status"],
                 "sig": element["properties"]["sig"],
                 "tsunami": element["properties"]["tsunami"],
+                "url": element["properties"]["url"],
             }
             self.template_event(event)
 
@@ -84,7 +85,8 @@ class UsgsBotParse:
                 f"<b>USGS | {event['magType']} {event['mag']} | Depth: {event['depth']} Km </b>\n\n"
                 f"<pre>{event['place']}</pre>\n\n"
                 f"<i>{event['time']}</i>\n\n"
-                f"<pre>{event['status']}, SIG: {event['sig']}</pre>"
+                f"<pre>Status: {event['status']}, SIG: {event['sig']}</pre>\n\n"
+                f"<a href='{event['url']}'>USGS URL</a>"
             )
 
             asyncio.run(bot.send_update(template, event_location))

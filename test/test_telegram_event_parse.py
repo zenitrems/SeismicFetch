@@ -86,8 +86,8 @@ class TestUsgsBotParse(unittest.TestCase):
                 "properties": {
                     "mag": 5.3,
                     "place": "21 km SSW of Rāmhormoz, Iran",
-                    "time": "2023-10-15T11:15:37.551Z",
-                    "updated": "2023-10-15T11:29:32.040Z",
+                    "time": "2023-10-15T11:15:37.551",
+                    "updated": "2023-10-15T11:29:32.040",
                     "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000lfq9",
                     "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us6000lfq9.geojson",
                     "status": "reviewed",
@@ -114,7 +114,7 @@ class TestUsgsBotParse(unittest.TestCase):
         self.usgs_parse.parse_event(data)
         self.usgs_parse.template_event.assert_called_with(
             {
-                "time": "2023-10-15T11:15:37.551Z",
+                "time": "2023-10-15T11:15:37.551",
                 "mag": 5.3,
                 "magType": "mww",
                 "place": "21 km SSW of Rāmhormoz, Iran",
@@ -124,6 +124,7 @@ class TestUsgsBotParse(unittest.TestCase):
                 "status": "reviewed",
                 "sig": 432,
                 "tsunami": 0,
+                "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000lfq9",
             }
         )
 
@@ -134,7 +135,7 @@ class TestUsgsBotParse(unittest.TestCase):
         # Llama a la función que deseas probar
         self.usgs_parse.template_event(
             {
-                "time": "2023-10-15T11:15:37.551Z",
+                "time": "2023-10-15T11:15:37.551",
                 "mag": 5.3,
                 "magType": "mww",
                 "place": "21 km SSW of Rāmhormoz, Iran",
@@ -144,6 +145,7 @@ class TestUsgsBotParse(unittest.TestCase):
                 "status": "reviewed",
                 "sig": 432,
                 "tsunami": 0,
+                "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000lfq9",
             }
         )
 
