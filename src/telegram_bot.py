@@ -32,7 +32,7 @@ logger.add(handler)
 
 
 class MyBot:
-    """Bot class"""
+    """Main Telegram Bot Class"""
 
     def __init__(self):
         self.token = os.getenv("TELEGRAM_KEY")
@@ -42,45 +42,53 @@ class MyBot:
         )
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """/start command method"""
+        """Handle Telegram chat command /start"""
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text="Soy un robotsin"
         )
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
-        """Handle message from chat"""
+        """Handle incomming chat messages"""
         message_text = update.message.text
         print(update.effective_chat.id)
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=message_text
         )
 
-    async def send_evento(self, evento):
-        """send evento to chat"""
+    async def send_update(self, update, location):
+        """Send Event to the defined chat_id"""
         async with self.bot as bot:
             try:
                 await bot.send_message(
-                    chat_id=os.getenv("TELEGRAM_GROUP"), text=evento, parse_mode="HTML"
+                    chat_id=os.getenv("TELEGRAM_GROUP"), text=update, parse_mode="HTML"
+                )
+                await bot.send_location(
+                    chat_id=os.getenv("TELEGRAM_GROUP"),
+                    latitude=location[0],
+                    longitude=location[1],
+                    disable_notification=True,
                 )
             except TelegramError as telegram_error:
                 logging.error(telegram_error)
 
             logger.info("Send")
 
-    async def send_error(self, evento):
-        """send error to bot chat"""
+    async def send_error(self, error):
+        """Send Error updates to the defined chat_id"""
         async with self.bot as bot:
             try:
-                texto = f"<b>ERROR</b>\n\n</code>{evento}</code>"
+                error_text = f"<b>ERROR</b>\n\n</code>{error}</code>"
                 await bot.send_message(
-                    chat_id=os.getenv("TELEGRAM_CHAT_ID"), text=texto, parse_mode="HTML"
+                    chat_id=os.getenv("TELEGRAM_CHAT_ID"),
+                    text=error_text,
+                    parse_mode="HTML",
                 )
             except TelegramError as telegram_error:
                 logger.error(telegram_error)
             logger.info("Telegram Notify")
 
     def main(self):
-        """run method"""
+        """Main Bot run Method(Standalone)"""
         start_handler = CommandHandler("start", self.start)
         self.app.add_handler(start_handler)
         message_handler = MessageHandler(None, self.handle_message)
