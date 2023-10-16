@@ -7,7 +7,6 @@ import sys
 import signal
 
 from tornado.ioloop import IOLoop
-from helpers import logger
 from src import helpers, get_mongo_db, fetch_ssn, fetch_usgs, emsc_client
 
 logger = helpers.logger
