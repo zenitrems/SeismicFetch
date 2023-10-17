@@ -62,12 +62,12 @@ class MyBot:
                 await bot.send_message(
                     chat_id=os.getenv("TELEGRAM_GROUP"), text=update, parse_mode="HTML"
                 )
-                await bot.send_location(
+                """ await bot.send_location(
                     chat_id=os.getenv("TELEGRAM_GROUP"),
                     latitude=location[0],
                     longitude=location[1],
                     disable_notification=True,
-                )
+                ) """
             except TelegramError as telegram_error:
                 logging.error(telegram_error)
 
