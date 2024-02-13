@@ -1,3 +1,9 @@
 .env
 .venv
 __pycache__
+.idea/.gitignore
+.idea/misc.xml
+.idea/modules.xml
+.idea/SeismicFetch.iml
+.idea/vcs.xml
+.idea/inspectionProfiles/profiles_settings.xml
