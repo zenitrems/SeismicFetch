@@ -1,6 +1,6 @@
 # pylint: disable=broad-exception-caught, line-too-long
 """
-Feeder utilities
+Utilities for event parsing
 """
 import sys
 from datetime import datetime

@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 """
-Seismic Fetch
+Fernando Martinez 
+@zenitrems 
+
+SeismicFetch init
 """
 import threading
 import sys
@@ -13,7 +16,7 @@ logger = helpers.logger
 
 
 class ScriptStart:
-    """Start Watching"""
+    """Start Main Process"""
 
     def __init__(self) -> None:
         self.main()
