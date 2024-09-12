@@ -7,7 +7,5 @@ class TestFetchId(unittest.TestCase):
         return super().setUp()
     
     def test_fetch_id(self):
-        main_event = {'unid':'20170919_0000091'}
-        source = "UNID"
-        out = 'ALL'
-        self.fetch_id(main_event, source, out)
+        main_event = {'unid':'20170919_0000091', 'source': 'UNID', 'out': 'all'}
+        self.fetch_id(main_event)
