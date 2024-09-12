@@ -8,7 +8,8 @@ import time
 from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
-from src import helpers, telegram_parse
+from src import helpers
+from src.telegram import telegram_parse
 
 
 ssn_utils = helpers.SsnUtils()

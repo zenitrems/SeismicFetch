@@ -9,7 +9,8 @@ from tornado.websocket import websocket_connect, WebSocketError, WebSocketClosed
 from tornado.ioloop import IOLoop
 from tornado.platform.asyncio import to_asyncio_future
 from tornado import gen
-from src import helpers, telegram_parse
+from src import helpers
+from src.telegram import telegram_parse
 
 
 bot_action = telegram_parse.EmscBotParse()
