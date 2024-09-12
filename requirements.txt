@@ -1,8 +1,5 @@
 beautifulsoup4==4.12.3
 loguru==0.7.2
-matplotlib==3.9.2
-numpy==2.1.0
-obspy==1.4.1
 pymongo==4.8.0
 python-dotenv==1.0.1
 python-telegram-bot==21.4
