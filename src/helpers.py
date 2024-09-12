@@ -1,12 +1,13 @@
 # pylint: disable=broad-exception-caught, line-too-long
 """
-Feeder utilities
+Utilities for event parsing
 """
 import sys
 from datetime import datetime
 from loguru import logger
 import pytz
-from src import mongo_model, telegram_parse
+from src.telegram import telegram_parse
+from src.db import mongo_model
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 

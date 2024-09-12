@@ -4,7 +4,8 @@ Mongo data Model
 from datetime import datetime, timedelta
 import pytz
 from pymongo.errors import PyMongoError
-from src import helpers, get_mongo_db
+from src import helpers
+from src.db import get_mongo_db
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")

@@ -4,7 +4,7 @@ and creates an HTML template to send to the telegram channel with specific data 
 """
 import asyncio
 from dotenv import load_dotenv
-from src import telegram_bot
+from src.telegram import telegram_bot
 
 load_dotenv()
 bot = telegram_bot.MyBot()

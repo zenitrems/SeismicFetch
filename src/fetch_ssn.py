@@ -2,12 +2,14 @@
 Fetch SSN latest Earthquakes
 www.ssn.unam.mx
 """
+
 import sys
 import time
 from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
-from src import helpers, telegram_parse
+from src import helpers
+from src.telegram import telegram_parse
 
 
 ssn_utils = helpers.SsnUtils()
@@ -16,6 +18,10 @@ logger = helpers.logger
 
 load_dotenv()
 SLEEP_SECONDS = 60
+
+headers = {
+    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:128.0) Gecko/20100101 Firefox/128.0",
+}
 
 
 def fetch_ssn():

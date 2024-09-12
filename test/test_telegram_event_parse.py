@@ -1,6 +1,6 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from src import telegram_parse
+from src.telegram import telegram_parse
 
 
 class TestSsnBotParse(unittest.TestCase):

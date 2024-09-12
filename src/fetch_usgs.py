@@ -5,7 +5,8 @@ www.usgs.gov
 import time
 import requests
 from dotenv import load_dotenv
-from src import helpers, telegram_parse
+from src import helpers
+from src.telegram import telegram_parse
 
 
 load_dotenv()

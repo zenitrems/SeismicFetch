@@ -2,13 +2,15 @@
 EMSC Websocket Client
 www.seismicportal.eu
 """
+
 from __future__ import unicode_literals
 import json
 from tornado.websocket import websocket_connect, WebSocketError, WebSocketClosedError
 from tornado.ioloop import IOLoop
 from tornado.platform.asyncio import to_asyncio_future
 from tornado import gen
-from src import helpers, telegram_parse
+from src import helpers
+from src.telegram import telegram_parse
 
 
 bot_action = telegram_parse.EmscBotParse()
@@ -23,10 +25,9 @@ logger = helpers.logger
 
 
 def process_event(message):
-    """Process Event"""
+    """Process New Events"""
     try:
         data = json.loads(message)
-
         new_events = emsc_utils.process_data(data)
         if new_events:
             to_asyncio_future(bot_action.parse_event(new_events))
@@ -38,18 +39,25 @@ def process_event(message):
 def listen_events(web_socket):
     """Listen to events"""
     while True:
-        msg = yield web_socket.read_message()
-        if msg is None:
-            logger.info("No message recived retrying...")
-            # Handle socket Disconect
+        try:
+            msg = yield web_socket.read_message()
+            if msg is None:
+                logger.warning("No message received, attempting to reconnect...")
+                raise WebSocketClosedError
+            process_event(msg)
+
+        except WebSocketClosedError:
+            logger.info(
+                "Disconnected. Reconnecting in {} seconds...".format(RETRY_INTERVAL)
+            )
             yield gen.sleep(RETRY_INTERVAL)
             try:
                 web_socket = yield websocket_connect(
                     ECHO_URI, ping_interval=PING_INTERVAL
                 )
+                logger.info("Reconected successfully")
             except WebSocketClosedError:
                 logger.exception(WebSocketClosedError)
-        process_event(msg)
 
 
 @gen.coroutine
