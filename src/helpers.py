@@ -6,7 +6,7 @@ import sys
 from datetime import datetime
 from loguru import logger
 import pytz
-from src.telegram import telegram_parse
+from src.telegram import telegram_parser
 from src.db import mongo_model
 
 UTC_TIMEZONE = pytz.timezone("UTC")
@@ -29,7 +29,7 @@ class SsnUtils:
 
     def __init__(self) -> None:
         self.db_action = mongo_model.SsnDbActions()
-        self.bot_actions = telegram_parse.SsnBotParse()
+        self.bot_actions = telegram_parser.SsnBotParse()
         self.new_events = []
 
     def process_data(self, data):
@@ -119,7 +119,7 @@ class UsgsUtils:
 
     def __init__(self) -> None:
         self.db_action = mongo_model.UsgsDbActions()
-        self.bot_actions = telegram_parse.UsgsBotParse()
+        self.bot_actions = telegram_parser.UsgsBotParse()
         self.new_events = []
 
     def process_data(self, data):
@@ -248,7 +248,7 @@ class EmscUtils:
 
     def __init__(self) -> None:
         self.db_action = mongo_model.EmscDbActions()
-        self.bot_actions = telegram_parse.EmscBotParse()
+        self.bot_actions = telegram_parser.EmscBotParse()
         self.new_events = []
 
     def process_data(self, data):

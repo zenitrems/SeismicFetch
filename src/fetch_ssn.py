@@ -9,11 +9,11 @@ from dotenv import load_dotenv
 import requests
 from bs4 import BeautifulSoup
 from src import helpers
-from src.telegram import telegram_parse
+from src.telegram import telegram_parser
 
 
 ssn_utils = helpers.SsnUtils()
-bot_action = telegram_parse.SsnBotParse()
+bot_action = telegram_parser.SsnBotParse()
 logger = helpers.logger
 
 load_dotenv()

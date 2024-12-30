@@ -1,11 +1,11 @@
 import unittest
 from unittest.mock import MagicMock, patch
-from src.telegram import telegram_parse
+from src.telegram import telegram_parser
 
 
 class TestSsnBotParse(unittest.TestCase):
     def setUp(self) -> None:
-        self.ssn_parse = telegram_parse.SsnBotParse()
+        self.ssn_parse = telegram_parser.SsnBotParse()
         return super().setUp()
 
     def test_parse_event(self):
@@ -73,7 +73,7 @@ class TestSsnBotParse(unittest.TestCase):
 
 class TestUsgsBotParse(unittest.TestCase):
     def setUp(self) -> None:
-        self.usgs_parse = telegram_parse.UsgsBotParse()
+        self.usgs_parse = telegram_parser.UsgsBotParse()
         return super().setUp()
 
     def test_parse_event(self):
@@ -152,7 +152,7 @@ class TestUsgsBotParse(unittest.TestCase):
 
 class TestEmscBotParse(unittest.TestCase):
     def setUp(self) -> None:
-        self.emsc_parse = telegram_parse.EmscBotParse()
+        self.emsc_parse = telegram_parser.EmscBotParse()
         return super().setUp()
 
     async def test_parse_event(self):
