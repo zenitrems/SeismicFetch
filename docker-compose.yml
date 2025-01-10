@@ -1,0 +1,27 @@
+volumes:
+  mongo-data:
+
+services:
+  mongodb:
+    image: mongo:latest
+    container_name: mongodb
+    ports:
+      - '27017:27017'
+    volumes:
+      - './mongod.conf:/etc/mongod.conf'
+      - 'mongo-data:/data/db'
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=${MONGO_INITDB_ROOT_USERNAME}
+      - MONGO_INITDB_ROOT_PASSWORD=${MONGO_INITDB_ROOT_PASSWORD}
+    command: mongod --config /etc/mongod.conf
+    restart: always
+
+  seismicfetch:
+    image: ghcr.io/zenitrems/seismicfetch:master
+    container_name: seismicfetch
+    environment:
+      - TELEGRAM_KEY=${TELEGRAM_KEY}
+      - TELEGRAM_GROUP=${TELEGRAM_GROUP}
+      - TELEGRAM_CHAT_ID=${TELEGRAM_CHAT_ID}
+      - MONGO_URI=${MONGO_URI}
+    restart: always
