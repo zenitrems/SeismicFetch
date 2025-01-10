@@ -6,13 +6,13 @@ import time
 import requests
 from dotenv import load_dotenv
 from src import helpers
-from src.telegram import telegram_parse
+from src.telegram import telegram_parser
 
 
 load_dotenv()
 
 usgs_utils = helpers.UsgsUtils()
-bot_action = telegram_parse.UsgsBotParse()
+bot_action = telegram_parser.UsgsBotParse()
 logger = helpers.logger
 
 # USGS_FEED = "https://earthquake.usgs.gov/earthquakes/feed/v1.0/summary/2.5_month.geojson"

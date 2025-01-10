@@ -10,10 +10,10 @@ from tornado.ioloop import IOLoop
 from tornado.platform.asyncio import to_asyncio_future
 from tornado import gen
 from src import helpers
-from src.telegram import telegram_parse
+from src.telegram import telegram_parser
 
 
-bot_action = telegram_parse.EmscBotParse()
+bot_action = telegram_parser.EmscBotParse()
 
 ECHO_URI = "wss://www.seismicportal.eu/standing_order/websocket"
 PING_INTERVAL = 15
