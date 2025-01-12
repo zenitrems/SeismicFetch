@@ -73,11 +73,7 @@ class TestSsnBotParse(unittest.TestCase):
 class TestUsgsBotParse(unittest.TestCase):
     def setUp(self) -> None:
         self.usgs_parse = telegram_parser.UsgsBotParse()
-        return super().setUp()
-
-    def test_parse_event(self):
-        """Test DataParse Function"""
-        data = [
+        self.test_data = [
             {
                 "_id": {"$oid": "652bcd61c51490aa1c879e65"},
                 "type": "Feature",
@@ -107,13 +103,17 @@ class TestUsgsBotParse(unittest.TestCase):
                 "id": "us6000lfq9",
             }
         ]
+        return super().setUp()
+
+    def test_parse_event(self):
+        """Test DataParse Function"""
 
         # Mock para el metodo template_event
         self.usgs_parse.template_event = MagicMock()
-        self.usgs_parse.parse_event(data)
+        self.usgs_parse.parse_event(self.test_data)
         self.usgs_parse.template_event.assert_called_with(
             {
-                "time": "2023-10-15T11:15:37.551",
+                "time": "15-October-2023, 11:15 UTC",
                 "mag": 5.3,
                 "magType": "mww",
                 "place": "21 km SSW of Rāmhormoz, Iran",
@@ -134,7 +134,7 @@ class TestUsgsBotParse(unittest.TestCase):
         # Llama a la función que deseas probar
         self.usgs_parse.template_event(
             {
-                "time": "2023-10-15T11:15:37.551",
+                "time": "15-October-2023, 11:15 UTC",
                 "mag": 5.3,
                 "magType": "mww",
                 "place": "21 km SSW of Rāmhormoz, Iran",

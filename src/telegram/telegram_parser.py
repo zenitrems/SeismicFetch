@@ -73,8 +73,16 @@ class UsgsBotParse:
     def parse_event(self, data):
         """For each event Create a template"""
         for element in data:
+
+            datetime_obj = datetime.strptime(
+                element["properties"]["time"], "%Y-%m-%dT%H:%M:%S.%f"
+            )
+            legible_datetime = (
+                datetime.strftime(datetime_obj, "%d-%B-%Y, %H:%M") + " UTC"
+            )
+
             event = {
-                "time": element["properties"]["time"],
+                "time": legible_datetime,
                 "mag": element["properties"]["mag"],
                 "magType": element["properties"]["magType"],
                 "place": element["properties"]["place"],
