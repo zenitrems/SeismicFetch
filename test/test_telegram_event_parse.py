@@ -6,11 +6,7 @@ from src.telegram import telegram_parser
 class TestSsnBotParse(unittest.TestCase):
     def setUp(self) -> None:
         self.ssn_parse = telegram_parser.SsnBotParse()
-        return super().setUp()
-
-    def test_parse_event(self):
-        """Test DataParse Function"""
-        data = [
+        self.test_data = [
             {
                 "_id": {"$oid": "64e8672ea69b44c678f10285"},
                 "type": "Feature",
@@ -27,13 +23,17 @@ class TestSsnBotParse(unittest.TestCase):
             }
         ]
 
+        return super().setUp()
+
+    def test_parse_event(self):
+        """Test SSN DataParse Function"""
         # Mock para el metodo template_event
         self.ssn_parse.template_event = MagicMock()
 
-        self.ssn_parse.parse_event(data)
+        self.ssn_parse.parse_event(self.test_data)
         self.ssn_parse.template_event.assert_called_with(
             {
-                "time": "2023-08-25T07:24:16.000Z",
+                "time": "25-August-2023, 07:24 UTC",
                 "mag": 5.5,
                 "magType": "m",
                 "place": "275 km al SURESTE de CABO SAN LUCAS, BCS",
@@ -49,10 +49,9 @@ class TestSsnBotParse(unittest.TestCase):
         # Mock para la función asyncio.run(bot.send_evento)
         bot = MagicMock()
         bot.send_evento = MagicMock()
-        # Llama a la función que deseas probar
         self.ssn_parse.template_event(
             {
-                "time": "2023-08-25T07:24:16.000Z",
+                "time": "25-August-2023, 07:24 UTC",
                 "mag": 5.5,
                 "magType": "m",
                 "place": "275 km al SURESTE de CABO SAN LUCAS, BCS",
@@ -67,7 +66,7 @@ class TestSsnBotParse(unittest.TestCase):
         """ bot.send_evento.assert_called_with(
             f"<b> Test Auth| mb 8.0 | Depth: 10.0 Km </b>\n\n"
             f"<pre>Test Place</pre>\n\n"
-            f"<i>2023-10-07T12:34:56</i>\n\n"
+            f"<i>25-August-2023, 07:24 UTC</i>\n\n"
         ) """
 
 

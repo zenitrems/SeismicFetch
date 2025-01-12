@@ -2,7 +2,9 @@
 Parse each event in the array to separate events above the magnitude threshold, 
 and creates an HTML template to send to the telegram channel with specific data for each agency. 
 """
+
 import asyncio
+from datetime import datetime
 from dotenv import load_dotenv
 from src.telegram import telegram_bot
 
@@ -20,8 +22,17 @@ class SsnBotParse:
     def parse_event(self, data):
         """For each event Create a template"""
         for element in data:
+
+            datetime_obj = datetime.strptime(
+                element["properties"]["time"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            )
+            legible_datetime = (
+                datetime.strftime(datetime_obj, "%d-%B-%Y, %H:%M") + " UTC"
+            )
+            # print(legible_datetime,"\n")
+
             event = {
-                "time": element["properties"]["time"],
+                "time": legible_datetime,
                 "mag": element["properties"]["mag"],
                 "magType": element["properties"]["magType"],
                 "place": element["properties"]["place"],
