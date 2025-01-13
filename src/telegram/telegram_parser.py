@@ -23,11 +23,12 @@ class SsnBotParse:
         """For each event Create a template"""
         for element in data:
 
-            datetime_obj = datetime.strptime(
-                element["properties"]["time"], "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
+            # datetime_obj = datetime.strptime(
+            #    element["properties"]["time"], "%Y-%m-%dT%H:%M:%S.%fZ"
+            # )
             legible_datetime = (
-                datetime.strftime(datetime_obj, "%d-%m-%Y, %H:%M") + " UTC"
+                datetime.strftime(element["properties"]["time"], "%d-%m-%Y, %H:%M")
+                + " UTC"
             )
             # print(legible_datetime,"\n")
 
@@ -74,11 +75,9 @@ class UsgsBotParse:
         """For each event Create a template"""
         for element in data:
 
-            datetime_obj = datetime.strptime(
-                element["properties"]["time"], "%Y-%m-%dT%H:%M:%S.%f"
-            )
             legible_datetime = (
-                datetime.strftime(datetime_obj, "%d-%m-%Y, %H:%M") + " UTC"
+                datetime.strftime(element["properties"]["time"], "%d-%m-%Y, %H:%M")
+                + " UTC"
             )
 
             event = {
@@ -120,11 +119,9 @@ class EmscBotParse:
     async def parse_event(self, data):
         """For each event Create a template"""
         for element in data:
-            datetime_obj = datetime.strptime(
-                element["properties"]["time"], "%Y-%m-%dT%H:%M:%S.%fZ"
-            )
             legible_datetime = (
-                datetime.strftime(datetime_obj, "%d-%m-%Y, %H:%M") + " UTC"
+                datetime.strftime(element["properties"]["time"], "%d-%m-%Y, %H:%M")
+                + " UTC"
             )
             event = {
                 "time": legible_datetime,
@@ -136,7 +133,6 @@ class EmscBotParse:
                 "lon": element["geometry"]["coordinates"][0],
                 "auth": element["properties"]["auth"],
             }
-            print(event)
             await self.template_event(event)
 
     async def template_event(self, event):
