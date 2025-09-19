@@ -41,15 +41,18 @@ def fetch_ssn():
 def parse_ssn(response):
     """Parse data from SSN table"""
     soup = BeautifulSoup(response.text, "html.parser")
-    footer = soup.find("footer")
-    ssn_ultimo = footer.find("p", "update-time")
-    ssn_ultimo_start_index = ssn_ultimo.text.find("a las ") + len("a las ")
-    ssn_ultimo_finish_index = ssn_ultimo.text.find(" (")
-    ssn_ultimo_extract_date = ssn_ultimo.text[
-        ssn_ultimo_start_index:ssn_ultimo_finish_index
-    ]
-    ssn_ultima_actualizacion = ssn_ultimo_extract_date.replace("  ", " ")
-    logger.trace(f"\nSSN Latest Update: {ssn_ultima_actualizacion} UTC-6\n")
+
+    #USELESS. ONLY FOR LOG
+    #footer = soup.find("footer")
+    #ssn_ultimo = footer.find("p", "update-time")
+    #ssn_ultimo_start_index = ssn_ultimo.text.find("a las ") + len("a las ")
+    #ssn_ultimo_finish_index = ssn_ultimo.text.find(" (")
+    #ssn_ultimo_extract_date = ssn_ultimo.text[
+    #    ssn_ultimo_start_index:ssn_ultimo_finish_index
+    #]
+    #ssn_ultima_actualizacion = ssn_ultimo_extract_date.replace("  ", " ")
+    #logger.trace(f"\nSSN Latest Update: {ssn_ultima_actualizacion} UTC-6\n")
+    
     table = soup.find("table")
     rows = table.find_all("tr")
     new_events = ssn_utils.process_data(rows)
