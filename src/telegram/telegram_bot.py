@@ -4,6 +4,7 @@ Telegram bot
 import os
 import logging
 import asyncio
+from html import escape
 from dotenv import load_dotenv
 from telegram import Update, Bot
 from telegram.ext import (
@@ -31,11 +32,21 @@ logger.add(handler)
 class MyBot:
     """Main Telegram Bot Class"""
 
-    def __init__(self):
-        self.token = os.getenv("TELEGRAM_KEY")
-        self.bot = Bot(token=self.token)
+    def __init__(
+        self,
+        token=None,
+        bot=None,
+        app=None,
+        group_chat_id=None,
+        error_chat_id=None,
+    ):
+        self.token = token or os.getenv("TELEGRAM_KEY")
+        self.group_chat_id = group_chat_id or os.getenv("TELEGRAM_GROUP")
+        self.error_chat_id = error_chat_id or os.getenv("TELEGRAM_CHAT_ID")
+        self.bot = bot or Bot(token=self.token)
         self.app = (
-            ApplicationBuilder().connection_pool_size(3).token(self.token).build()
+            app
+            or ApplicationBuilder().connection_pool_size(3).token(self.token).build()
         )
 
     async def start(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
@@ -47,7 +58,6 @@ class MyBot:
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         """Handle incomming chat messages"""
         message_text = update.message.text
-        print(update.effective_chat.id)
         await context.bot.send_message(
             chat_id=update.effective_chat.id, text=message_text
         )
@@ -57,10 +67,10 @@ class MyBot:
         async with self.bot as bot:
             try:
                 await bot.send_message(
-                    chat_id=os.getenv("TELEGRAM_GROUP"), text=update, parse_mode="HTML"
+                    chat_id=self.group_chat_id, text=update, parse_mode="HTML"
                 )
                 """ await bot.send_location(
-                    chat_id=os.getenv("TELEGRAM_GROUP"),
+                    chat_id=self.group_chat_id,
                     latitude=location[0],
                     longitude=location[1],
                     disable_notification=True,
@@ -74,9 +84,9 @@ class MyBot:
         """Send Error updates to the defined chat_id"""
         async with self.bot as bot:
             try:
-                error_text = f"<b>ERROR</b>\n\n</code>{error}</code>"
+                error_text = f"<b>ERROR</b>\n\n<code>{escape(str(error))}</code>"
                 await bot.send_message(
-                    chat_id=os.getenv("TELEGRAM_CHAT_ID"),
+                    chat_id=self.error_chat_id,
                     text=error_text,
                     parse_mode="HTML",
                 )
