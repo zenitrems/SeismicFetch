@@ -10,11 +10,11 @@ import requests
 from bs4 import BeautifulSoup
 from src import helpers
 from src.telegram import telegram_parser
+from src.logging_config import logger
 
 
 ssn_utils = helpers.SsnUtils()
 bot_action = telegram_parser.SsnBotParse()
-logger = helpers.logger
 
 load_dotenv()
 SLEEP_SECONDS = 60

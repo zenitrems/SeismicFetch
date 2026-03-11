@@ -2,26 +2,13 @@
 """
 Utilities for event parsing
 """
-import sys
 from datetime import datetime
-from loguru import logger
 import pytz
 from src.telegram import telegram_parser
 from src.db import mongo_model
+from src.logging_config import logger
 
 UTC_TIMEZONE = pytz.timezone("UTC")
-
-
-logger.remove()
-logger.add(
-    sink=sys.stdout,
-    colorize=True,
-    format="[{time:HH:mm:ss}] | <lvl>{level}</lvl> | {name}:{function} | <b><y>{message}{exception}</y></b>",
-    level="DEBUG",
-)
-
-level_new = logger.level("NEW_EVENT", no=38, color="<r>")
-level_update = logger.level("UPDATE", no=39, color="<y>")
 
 
 class SsnUtils:

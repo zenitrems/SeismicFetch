@@ -5,10 +5,9 @@ import os
 from pymongo import MongoClient
 from pymongo.errors import PyMongoError
 from dotenv import load_dotenv
-from src import helpers
+from src.logging_config import logger
 
 load_dotenv()
-logger = helpers.logger
 
 
 # Singleton for MongoClient

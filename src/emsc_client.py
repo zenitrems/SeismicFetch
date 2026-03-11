@@ -11,6 +11,7 @@ from tornado.platform.asyncio import to_asyncio_future
 from tornado import gen
 from src import helpers
 from src.telegram import telegram_parser
+from src.logging_config import logger
 
 
 bot_action = telegram_parser.EmscBotParse()
@@ -21,7 +22,6 @@ RETRY_INTERVAL = 5
 
 
 emsc_utils = helpers.EmscUtils()
-logger = helpers.logger
 
 
 def process_event(message):

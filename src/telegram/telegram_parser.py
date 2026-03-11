@@ -9,15 +9,14 @@ from dotenv import load_dotenv
 from src.telegram import telegram_bot
 
 load_dotenv()
-bot = telegram_bot.MyBot()
 MAG_THRESHOLD = float(5.0)
 
 
 class SsnBotParse:
     """Parse Class For SSN Events"""
 
-    def __init__(self):
-        pass
+    def __init__(self, bot_action=None):
+        self.bot = bot_action or telegram_bot.MyBot()
 
     def parse_event(self, data):
         """For each event Create a template"""
@@ -62,14 +61,14 @@ class SsnBotParse:
                     f"<i>{event['time']}</i>\n\n"
                 )
 
-            asyncio.run(bot.send_update(template, event_location))
+            asyncio.run(self.bot.send_update(template, event_location))
 
 
 class UsgsBotParse:
     """Parse Class For USGS Events"""
 
-    def __init__(self):
-        pass
+    def __init__(self, bot_action=None):
+        self.bot = bot_action or telegram_bot.MyBot()
 
     def parse_event(self, data):
         """For each event Create a template"""
@@ -107,14 +106,14 @@ class UsgsBotParse:
                 f"<a href='{event['url']}'>USGS URL</a>"
             )
 
-            asyncio.run(bot.send_update(template, event_location))
+            asyncio.run(self.bot.send_update(template, event_location))
 
 
 class EmscBotParse:
     """Parse Class For EMSC Events"""
 
-    def __init__(self):
-        pass
+    def __init__(self, bot_action=None):
+        self.bot = bot_action or telegram_bot.MyBot()
 
     async def parse_event(self, data):
         """For each event Create a template"""
@@ -145,4 +144,4 @@ class EmscBotParse:
                 f"<i>{event['time']}</i>\n\n"
             )
 
-            await bot.send_update(template, event_location)
+            await self.bot.send_update(template, event_location)

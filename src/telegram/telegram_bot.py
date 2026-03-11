@@ -13,12 +13,9 @@ from telegram.ext import (
     ContextTypes,
 )
 from telegram.error import TelegramError
-from src import helpers
+from src.logging_config import logger
 
 load_dotenv()
-
-
-logger = helpers.logger
 
 
 logging.basicConfig(

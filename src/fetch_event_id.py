@@ -4,9 +4,7 @@ EMSC Web Services
 
 import requests
 import json
-from src import helpers
-
-logger = helpers.logger
+from src.logging_config import logger
 
 
 

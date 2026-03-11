@@ -4,14 +4,13 @@ Mongo data Model
 from datetime import datetime, timedelta
 import pytz
 from pymongo.errors import PyMongoError
-from src import helpers
 from src.db import get_mongo_db
+from src.logging_config import logger
 
 UTC_TIMEZONE = pytz.timezone("UTC")
 AMERICA_MEXICO_TIMEZONE = pytz.timezone("America/Mexico_City")
 
 db = get_mongo_db.db_connect()
-logger = helpers.logger
 
 
 class SsnDbActions:
