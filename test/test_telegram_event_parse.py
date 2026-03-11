@@ -1,11 +1,15 @@
 import unittest
-from unittest.mock import MagicMock, patch
+from datetime import datetime
+from unittest.mock import AsyncMock, MagicMock, patch
+
 from src.telegram import telegram_parser
 
 
 class TestSsnBotParse(unittest.TestCase):
     def setUp(self) -> None:
-        self.ssn_parse = telegram_parser.SsnBotParse()
+        self.bot = MagicMock()
+        self.bot.send_update = AsyncMock()
+        self.ssn_parse = telegram_parser.SsnBotParse(bot_action=self.bot)
         self.test_data = [
             {
                 "_id": {"$oid": "64e8672ea69b44c678f10285"},
@@ -14,7 +18,7 @@ class TestSsnBotParse(unittest.TestCase):
                 "properties": {
                     "mag": 5.5,
                     "place": "275 km al SURESTE de CABO SAN LUCAS, BCS",
-                    "time": "2023-08-25T07:24:16.000Z",
+                    "time": datetime(2023, 8, 25, 7, 24, 16),
                     "preliminary": True,
                     "auth": "SSN",
                     "magType": "m",
@@ -22,18 +26,16 @@ class TestSsnBotParse(unittest.TestCase):
                 },
             }
         ]
-
         return super().setUp()
 
     def test_parse_event(self):
-        """Test SSN DataParse Function"""
-        # Mock para el metodo template_event
         self.ssn_parse.template_event = MagicMock()
 
         self.ssn_parse.parse_event(self.test_data)
-        self.ssn_parse.template_event.assert_called_with(
+
+        self.ssn_parse.template_event.assert_called_once_with(
             {
-                "time": "25-August-2023, 07:24 UTC",
+                "time": "25-08-2023, 07:24 UTC",
                 "mag": 5.5,
                 "magType": "m",
                 "place": "275 km al SURESTE de CABO SAN LUCAS, BCS",
@@ -45,34 +47,57 @@ class TestSsnBotParse(unittest.TestCase):
             }
         )
 
-    def test_template_event(self):
-        # Mock para la función asyncio.run(bot.send_evento)
-        bot = MagicMock()
-        bot.send_evento = MagicMock()
-        self.ssn_parse.template_event(
-            {
-                "time": "25-August-2023, 07:24 UTC",
-                "mag": 5.5,
-                "magType": "m",
-                "place": "275 km al SURESTE de CABO SAN LUCAS, BCS",
-                "depth": 65,
-                "lat": 20.68,
-                "lon": -108.7,
-                "auth": "SSN",
-                "preliminary": True,
-            }
+    def test_template_event_sends_message_when_above_threshold(self):
+        event = {
+            "time": "25-08-2023, 07:24 UTC",
+            "mag": 5.5,
+            "magType": "m",
+            "place": "275 km al SURESTE de CABO SAN LUCAS, BCS",
+            "depth": 65,
+            "lat": 20.68,
+            "lon": -108.7,
+            "auth": "SSN",
+            "preliminary": True,
+        }
+
+        with patch(
+            "src.telegram.telegram_parser.asyncio.run",
+            side_effect=lambda coro: coro.close(),
+        ) as asyncio_run:
+            self.ssn_parse.template_event(event)
+
+        asyncio_run.assert_called_once()
+        self.bot.send_update.assert_called_once_with(
+            "<b>SSN | m 5.5 (PRELIMINAR) | Depth: 65 Km </b>\n\n"
+            "<pre>275 km al SURESTE de CABO SAN LUCAS, BCS</pre>\n\n"
+            "<i>25-08-2023, 07:24 UTC</i>\n\n",
+            [20.68, -108.7],
         )
-        # Verifica que asyncio.run(bot.send_evento) se haya llamado con el argumento correcto
-        """ bot.send_evento.assert_called_with(
-            f"<b> Test Auth| mb 8.0 | Depth: 10.0 Km </b>\n\n"
-            f"<pre>Test Place</pre>\n\n"
-            f"<i>25-August-2023, 07:24 UTC</i>\n\n"
-        ) """
+
+    def test_template_event_skips_below_threshold(self):
+        event = {
+            "time": "25-08-2023, 07:24 UTC",
+            "mag": 4.9,
+            "magType": "m",
+            "place": "CABO SAN LUCAS, BCS",
+            "depth": 65,
+            "lat": 20.68,
+            "lon": -108.7,
+            "auth": "SSN",
+            "preliminary": False,
+        }
+
+        with patch("src.telegram.telegram_parser.asyncio.run") as asyncio_run:
+            self.ssn_parse.template_event(event)
+
+        asyncio_run.assert_not_called()
 
 
 class TestUsgsBotParse(unittest.TestCase):
     def setUp(self) -> None:
-        self.usgs_parse = telegram_parser.UsgsBotParse()
+        self.bot = MagicMock()
+        self.bot.send_update = AsyncMock()
+        self.usgs_parse = telegram_parser.UsgsBotParse(bot_action=self.bot)
         self.test_data = [
             {
                 "_id": {"$oid": "652bcd61c51490aa1c879e65"},
@@ -81,8 +106,8 @@ class TestUsgsBotParse(unittest.TestCase):
                 "properties": {
                     "mag": 5.3,
                     "place": "21 km SSW of Rāmhormoz, Iran",
-                    "time": "2023-10-15T11:15:37.551",
-                    "updated": "2023-10-15T11:29:32.040",
+                    "time": datetime(2023, 10, 15, 11, 15, 37, 551000),
+                    "updated": datetime(2023, 10, 15, 11, 29, 32, 40000),
                     "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000lfq9",
                     "detail": "https://earthquake.usgs.gov/earthquakes/feed/v1.0/detail/us6000lfq9.geojson",
                     "status": "reviewed",
@@ -106,14 +131,13 @@ class TestUsgsBotParse(unittest.TestCase):
         return super().setUp()
 
     def test_parse_event(self):
-        """Test DataParse Function"""
-
-        # Mock para el metodo template_event
         self.usgs_parse.template_event = MagicMock()
+
         self.usgs_parse.parse_event(self.test_data)
-        self.usgs_parse.template_event.assert_called_with(
+
+        self.usgs_parse.template_event.assert_called_once_with(
             {
-                "time": "15-October-2023, 11:15 UTC",
+                "time": "15-10-2023, 11:15 UTC",
                 "mag": 5.3,
                 "magType": "mww",
                 "place": "21 km SSW of Rāmhormoz, Iran",
@@ -127,42 +151,51 @@ class TestUsgsBotParse(unittest.TestCase):
             }
         )
 
-    def test_template_event(self):
-        # Mock para la función asyncio.run(bot.send_evento)
-        bot = MagicMock()
-        bot.send_evento = MagicMock()
-        # Llama a la función que deseas probar
-        self.usgs_parse.template_event(
-            {
-                "time": "15-October-2023, 11:15 UTC",
-                "mag": 5.3,
-                "magType": "mww",
-                "place": "21 km SSW of Rāmhormoz, Iran",
-                "depth": 10,
-                "lat": 31.1027,
-                "lon": 49.5001,
-                "status": "reviewed",
-                "sig": 432,
-                "tsunami": 0,
-                "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000lfq9",
-            }
+    def test_template_event_sends_message_when_above_threshold(self):
+        event = {
+            "time": "15-10-2023, 11:15 UTC",
+            "mag": 5.3,
+            "magType": "mww",
+            "place": "21 km SSW of Rāmhormoz, Iran",
+            "depth": 10,
+            "lat": 31.1027,
+            "lon": 49.5001,
+            "status": "reviewed",
+            "sig": 432,
+            "tsunami": 0,
+            "url": "https://earthquake.usgs.gov/earthquakes/eventpage/us6000lfq9",
+        }
+
+        with patch(
+            "src.telegram.telegram_parser.asyncio.run",
+            side_effect=lambda coro: coro.close(),
+        ) as asyncio_run:
+            self.usgs_parse.template_event(event)
+
+        asyncio_run.assert_called_once()
+        self.bot.send_update.assert_called_once_with(
+            "<b>USGS | mww 5.3 | Depth: 10 Km </b>\n\n"
+            "<pre>21 km SSW of Rāmhormoz, Iran</pre>\n\n"
+            "<i>15-10-2023, 11:15 UTC</i>\n\n"
+            "<pre>Status: reviewed, SIG: 432</pre>\n\n"
+            "<a href='https://earthquake.usgs.gov/earthquakes/eventpage/us6000lfq9'>USGS URL</a>",
+            [31.1027, 49.5001],
         )
 
 
-class TestEmscBotParse(unittest.TestCase):
+class TestEmscBotParse(unittest.IsolatedAsyncioTestCase):
     def setUp(self) -> None:
-        self.emsc_parse = telegram_parser.EmscBotParse()
-        return super().setUp()
-
-    async def test_parse_event(self):
-        data = [
+        self.bot = MagicMock()
+        self.bot.send_update = AsyncMock()
+        self.emsc_parse = telegram_parser.EmscBotParse(bot_action=self.bot)
+        self.data = [
             {
                 "_id": {"$oid": "652bcb43c51490aa1c879e62"},
                 "type": "Feature",
                 "geometry": {"type": "Point", "coordinates": [49.4634, 31.1201, -11]},
                 "properties": {
-                    "time": "2023-10-15T11:15:38.310Z",
-                    "updated": "2023-10-15T11:35:14.788Z",
+                    "time": datetime(2023, 10, 15, 11, 15, 38, 310000),
+                    "updated": datetime(2023, 10, 15, 11, 35, 14, 788000),
                     "place": "WESTERN IRAN",
                     "mag": 5.3,
                     "magType": "mw",
@@ -175,12 +208,16 @@ class TestEmscBotParse(unittest.TestCase):
                 "id": "20231015_0000088",
             }
         ]
+        return super().setUp()
 
-        self.emsc_parse.template_event = MagicMock()
-        await self.emsc_parse.parse_event(data)
-        self.emsc_parse.template_event.assert_called_with(
+    async def test_parse_event(self):
+        self.emsc_parse.template_event = AsyncMock()
+
+        await self.emsc_parse.parse_event(self.data)
+
+        self.emsc_parse.template_event.assert_awaited_once_with(
             {
-                "time": "2023-10-15T11:15:38.310Z",
+                "time": "15-10-2023, 11:15 UTC",
                 "mag": 5.3,
                 "magType": "mw",
                 "place": "WESTERN IRAN",
@@ -191,20 +228,25 @@ class TestEmscBotParse(unittest.TestCase):
             }
         )
 
-    def test_template_event(self):
-        bot = MagicMock()
-        bot.send_evento = MagicMock()
-        self.emsc_parse.template_event(
-            {
-                "time": "2023-10-15T11:15:38.310Z",
-                "mag": 5.3,
-                "magType": "mw",
-                "place": "WESTERN IRAN",
-                "depth": 11,
-                "lat": 31.1201,
-                "lon": 49.4634,
-                "auth": "EMSC",
-            }
+    async def test_template_event_sends_message_when_above_threshold(self):
+        event = {
+            "time": "15-10-2023, 11:15 UTC",
+            "mag": 5.3,
+            "magType": "mw",
+            "place": "WESTERN IRAN",
+            "depth": 11,
+            "lat": 31.1201,
+            "lon": 49.4634,
+            "auth": "EMSC",
+        }
+
+        await self.emsc_parse.template_event(event)
+
+        self.bot.send_update.assert_awaited_once_with(
+            "<b>EMSC | mw 5.3 | Depth: 11 Km </b>\n\n"
+            "<pre>WESTERN IRAN</pre>\n\n"
+            "<i>15-10-2023, 11:15 UTC</i>\n\n",
+            [31.1201, 49.4634],
         )
 
 
