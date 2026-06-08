@@ -1,6 +1,6 @@
 """
-Parse each event in the array to separate events above the magnitude threshold, 
-and creates an HTML template to send to the telegram channel with specific data for each agency. 
+Parse each event in the array to separate events above the magnitude threshold,
+and creates an HTML template to send to the telegram channel with specific data for each agency.
 """
 
 import asyncio
@@ -23,11 +23,11 @@ def format_event_time(value):
         try:
             date_value = datetime.fromisoformat(iso_value)
         except ValueError:
-            return value if value.endswith("UTC") else f"{value} UTC"
+            return value if value.endswith("UTC") else value
     else:
-        return f"{value} UTC"
+        return value
 
-    return f"{date_value.strftime('%d-%m-%Y, %H:%M')} UTC"
+    return date_value.strftime("%d-%m-%Y, %H:%M")
 
 
 def format_coordinates(lat, lon):
